@@ -309,6 +309,7 @@ local function editorView()
       key = "editor-" .. current .. "-" .. editorRev,
       value = buffer,
       multiline = true,
+      focus = true,
       flexGrow = 1,
       placeholder = tr("editor_placeholder"),
       onChange = "onEdited",
