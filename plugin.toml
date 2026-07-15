@@ -34,7 +34,7 @@ position = "center_right"
 [[launcher_provider]]
 id = "launcher"
 entry = "launcher.luau"
-prefix = "/nt"
+prefix = "nt"
 glyph = "notes"
 include_in_global_search = false
 
