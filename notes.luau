@@ -1,7 +1,7 @@
 --!nonstrict
 -- Bar widget that opens the notes panel.
 
-local glyph = barWidget.getConfig("glyph")
+local glyph = noctalia.getConfig("glyph")
 
 local function render()
   barWidget.setGlyph(glyph)
