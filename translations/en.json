@@ -1,25 +1,35 @@
 {
-  "title": "Notes",
-  "empty": "No notes yet — create one with +",
-  "editor_placeholder": "Write your note…",
-  "confirm_delete": "Delete?",
-  "editing": "Editing…",
-  "saved": "Saved",
-  "save_failed": "Failed to save note",
-  "rename_exists": "A note with that name already exists",
   "bad_extension": "Invalid file extension setting — using md",
-  "scratchpad": "Scratchpad",
+  "confirm_delete": "Delete?",
   "counts": "{words} words · {chars} chars",
-  "launcher.clip_title": "New note from clipboard",
-  "launcher.home_title": "Open notes",
-  "launcher.home_subtitle": "Browse all notes",
-  "launcher.append_title": "Add to scratchpad",
-  "launcher.new_title": "New note",
-  "launcher.open_subtitle": "Open note",
-  "launcher.appended": "Added to scratchpad",
-  "settings.notes_dir.label": "Notes directory",
-  "settings.notes_dir.description": "Where note files are stored.",
-  "settings.extension.label": "File extension",
-  "settings.extension.description": "Extension for note files (without the dot). Only files with this extension are listed.",
-  "settings.glyph.label": "Bar glyph"
+  "editing": "Editing…",
+  "editor_placeholder": "Write your note…",
+  "empty": "No notes yet — create one with +",
+  "launcher": {
+    "append_title": "Add to scratchpad",
+    "appended": "Added to scratchpad",
+    "clip_title": "New note from clipboard",
+    "home_subtitle": "Browse all notes",
+    "home_title": "Open notes",
+    "new_title": "New note",
+    "open_subtitle": "Open note"
+  },
+  "rename_exists": "A note with that name already exists",
+  "save_failed": "Failed to save note",
+  "saved": "Saved",
+  "scratchpad": "Scratchpad",
+  "settings": {
+    "extension": {
+      "description": "Extension for note files (without the dot). Only files with this extension are listed.",
+      "label": "File extension"
+    },
+    "glyph": {
+      "label": "Bar glyph"
+    },
+    "notes_dir": {
+      "description": "Where note files are stored.",
+      "label": "Notes directory"
+    }
+  },
+  "title": "Notes"
 }
