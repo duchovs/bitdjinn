@@ -24,16 +24,6 @@ local pins = {} -- filename -> true; persisted in a sidecar next to the notes
 
 local render
 
--- Per-row callbacks need distinct global names; the reconciler dispatches
--- callbacks by name only. getfenv() is the script environment lua_getglobal
--- reads from, so assigning into it defines the callback the host will find.
-local env = getfenv()
-local function rowCallback(prefix, index, fn)
-  local name = prefix .. "_" .. index
-  env[name] = fn
-  return name
-end
-
 local function tr(key)
   return noctalia.tr(key)
 end
@@ -174,23 +164,23 @@ local function uniqueNoteName()
   return name
 end
 
-local function deleteControls(file, keyPrefix, index)
+local function deleteControls(file)
   return {
     ui.label({ text = tr("confirm_delete"), color = "error" }),
     ui.button({
       glyph = "check",
       variant = "primary",
-      onClick = rowCallback(keyPrefix .. "Yes", index, function()
+      onClick = function()
         deleteNote(file)
-      end),
+      end,
     }),
     ui.button({
       glyph = "close",
       variant = "ghost",
-      onClick = rowCallback(keyPrefix .. "No", index, function()
+      onClick = function()
         pendingDelete = nil
         render()
-      end),
+      end,
     }),
   }
 end
@@ -202,7 +192,7 @@ local function togglePin(file)
   render()
 end
 
-local function listRow(file, index)
+local function listRow(file)
   local pinned = pins[file] == true
   -- Both row states keep the same leading text button so the row height (set
   -- by the text-button tier) never changes when the confirm controls swap in.
@@ -211,33 +201,33 @@ local function listRow(file, index)
     variant = "ghost",
     contentAlign = "start",
     flexGrow = 1,
-    onClick = rowCallback("noteOpen", index, function()
+    onClick = function()
       openNote(file)
-    end),
+    end,
   }
   if pinned then
     title.glyph = "pinned"
   end
   local children = { ui.button(title) }
   if pendingDelete == file then
-    for _, node in ipairs(deleteControls(file, "noteRowDelete", index)) do
+    for _, node in ipairs(deleteControls(file)) do
       table.insert(children, node)
     end
   else
     table.insert(children, ui.button({
       glyph = pinned and "pinned-off" or "pin",
       variant = "ghost",
-      onClick = rowCallback("notePin", index, function()
+      onClick = function()
         togglePin(file)
-      end),
+      end,
     }))
     table.insert(children, ui.button({
       glyph = "trash",
       variant = "ghost",
-      onClick = rowCallback("noteDelete", index, function()
+      onClick = function()
         pendingDelete = file
         render()
-      end),
+      end,
     }))
   end
   -- Pin state is part of the key: retained buttons keep a previously set
@@ -259,8 +249,8 @@ local function listView()
       }),
     }),
   }
-  for index, file in ipairs(files) do
-    table.insert(rows, listRow(file, index))
+  for _, file in ipairs(files) do
+    table.insert(rows, listRow(file))
   end
   if #files == 0 then
     table.insert(rows, ui.label({ text = tr("empty"), color = "on_surface_variant" }))
