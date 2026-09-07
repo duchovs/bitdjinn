@@ -8,7 +8,7 @@ noctalia.setUpdateInterval(1000)
 
 -- ── Constant Definitions ───────────────────────────────────────────────────
 
-local COIN_DEFS = {
+local coinDefs = {
   { id = "bitcoin", symbol = "BTC", name = "Bitcoin", glyph = "currency-bitcoin", defaultPrice = 80000 },
   { id = "ethereum", symbol = "ETH", name = "Ethereum", glyph = "currency-ethereum", defaultPrice = 2800 },
   { id = "solana", symbol = "SOL", name = "Solana", glyph = "currency-solana", defaultPrice = 180 },
@@ -68,6 +68,7 @@ local function saveState()
     exchangeRates = exchangeRates,
     wallets = watchedWallets,
     priceHistory = priceHistory,
+    coins = coinDefs,
   }
   local raw = noctalia.json.encode(payload)
   if raw ~= nil then
@@ -76,44 +77,46 @@ local function saveState()
 end
 
 local function loadState()
-  for _, c in ipairs(COIN_DEFS) do
-    if priceHistory[c.id] == nil then
-      priceHistory[c.id] = { c.defaultPrice, c.defaultPrice }
+  local path = dataFilePath()
+  if path ~= nil then
+    local raw = noctalia.readFile(path)
+    if raw ~= nil then
+      local decoded = noctalia.json.decode(raw)
+      if type(decoded) == "table" then
+        if type(decoded.currency) == "string" then
+          currentCurrency = decoded.currency
+        end
+        if type(decoded.notifyEnabled) == "boolean" then
+          notifyEnabled = decoded.notifyEnabled
+        end
+        if type(decoded.exchangeRates) == "table" then
+          for k, v in pairs(decoded.exchangeRates) do
+            if type(v) == "number" and v > 0 then
+              exchangeRates[k] = v
+            end
+          end
+        end
+        if type(decoded.wallets) == "table" then
+          watchedWallets = decoded.wallets
+        end
+        if type(decoded.coins) == "table" and #decoded.coins > 0 then
+          coinDefs = decoded.coins
+        end
+        if type(decoded.priceHistory) == "table" then
+          for coinId, hist in pairs(decoded.priceHistory) do
+            if type(hist) == "table" and #hist > 0 then
+              priceHistory[coinId] = hist
+            end
+          end
+        end
+      end
     end
   end
 
-  local path = dataFilePath()
-  if path == nil then
-    return
-  end
-
-  local raw = noctalia.readFile(path)
-  if raw ~= nil then
-    local decoded = noctalia.json.decode(raw)
-    if type(decoded) == "table" then
-      if type(decoded.currency) == "string" then
-        currentCurrency = decoded.currency
-      end
-      if type(decoded.notifyEnabled) == "boolean" then
-        notifyEnabled = decoded.notifyEnabled
-      end
-      if type(decoded.exchangeRates) == "table" then
-        for k, v in pairs(decoded.exchangeRates) do
-          if type(v) == "number" and v > 0 then
-            exchangeRates[k] = v
-          end
-        end
-      end
-      if type(decoded.wallets) == "table" then
-        watchedWallets = decoded.wallets
-      end
-      if type(decoded.priceHistory) == "table" then
-        for coinId, hist in pairs(decoded.priceHistory) do
-          if type(hist) == "table" and #hist > 0 then
-            priceHistory[coinId] = hist
-          end
-        end
-      end
+  -- Seed price history for any coin (default or loaded) that doesn't have any yet
+  for _, c in ipairs(coinDefs) do
+    if priceHistory[c.id] == nil then
+      priceHistory[c.id] = { c.defaultPrice, c.defaultPrice }
     end
   end
 end
@@ -132,7 +135,7 @@ local function getCoinPrice(coinSymbol: string): number
       return m.price or 0
     end
   end
-  for _, c in ipairs(COIN_DEFS) do
+  for _, c in ipairs(coinDefs) do
     if c.symbol == sym then
       return c.defaultPrice * getRate(currentCurrency)
     end
@@ -215,7 +218,7 @@ local function fetchMarketPrices()
   -- Fetch fresh exchange rates and market data in parallel
   updateExchangeRates(function()
     local idList = {}
-    for _, def in ipairs(COIN_DEFS) do
+    for _, def in ipairs(coinDefs) do
       table.insert(idList, def.id)
     end
     local ids = table.concat(idList, ",")
@@ -253,7 +256,7 @@ local function fetchMarketPrices()
       local currentRate = getRate(currentCurrency)
       local updatedMarket = {}
 
-      for _, def in ipairs(COIN_DEFS) do
+      for _, def in ipairs(coinDefs) do
         local item = coinMap[def.id]
         local baseUsdPrice = def.defaultPrice
         local change = 0
@@ -580,6 +583,106 @@ local function removeWallet(addrOrId: string): boolean
   return false
 end
 
+-- ── Coin List Management Actions ───────────────────────────────────────────
+
+local function urlEncode(s: string): string
+  return (string.gsub(s, "([^%w%-%_%.%~])", function(c)
+    return string.format("%%%02X", string.byte(c))
+  end))
+end
+
+local function findCoinIndex(idOrSymbol: string): number?
+  local target = string.lower(noctalia.string.trim(idOrSymbol or ""))
+  if target == "" then
+    return nil
+  end
+  for i, def in ipairs(coinDefs) do
+    if string.lower(def.id) == target or string.lower(def.symbol) == target then
+      return i
+    end
+  end
+  return nil
+end
+
+local function removeCoin(idOrSymbol: string): boolean
+  local idx = findCoinIndex(idOrSymbol)
+  if idx == nil then
+    return false
+  end
+  local removedDef = table.remove(coinDefs, idx)
+  priceHistory[removedDef.id] = nil
+
+  local filteredMarket = {}
+  for _, m in ipairs(marketData) do
+    if m.id ~= removedDef.id then
+      table.insert(filteredMarket, m)
+    end
+  end
+  marketData = filteredMarket
+
+  saveState()
+  publishState()
+  return true
+end
+
+local function addCoin(query: string, onDone: (boolean, string?) -> ())
+  local clean = noctalia.string.trim(query or "")
+  if clean == "" then
+    onDone(false, "invalid_ticker")
+    return
+  end
+
+  if findCoinIndex(clean) ~= nil then
+    onDone(false, "duplicate_ticker")
+    return
+  end
+
+  local searchUrl = "https://api.coingecko.com/api/v3/search?query=" .. urlEncode(clean)
+  noctalia.http({
+    url = searchUrl,
+    method = "GET",
+    headers = { "Accept: application/json", "User-Agent: Mozilla/5.0 (Noctalia-BitDjinn)" },
+  }, function(res)
+    if not res.ok or res.status ~= 200 then
+      onDone(false, "network_error")
+      return
+    end
+
+    local data = noctalia.json.decode(res.body)
+    if type(data) ~= "table" or type(data.coins) ~= "table" or #data.coins == 0 then
+      onDone(false, "not_found")
+      return
+    end
+
+    local top = data.coins[1]
+    if type(top) ~= "table" or top.id == nil then
+      onDone(false, "not_found")
+      return
+    end
+
+    local resolvedId = string.lower(top.id)
+    local resolvedSymbol = string.upper(top.symbol or clean)
+
+    if findCoinIndex(resolvedId) ~= nil or findCoinIndex(resolvedSymbol) ~= nil then
+      onDone(false, "duplicate_ticker")
+      return
+    end
+
+    table.insert(coinDefs, {
+      id = resolvedId,
+      symbol = resolvedSymbol,
+      name = top.name or resolvedSymbol,
+      glyph = format.coinGlyph(resolvedSymbol),
+      defaultPrice = 1,
+    })
+    priceHistory[resolvedId] = { 1, 1 }
+
+    saveState()
+    fetchMarketPrices()
+    onDone(true, resolvedSymbol)
+  end)
+end
+
 -- ── Command & State Watching ───────────────────────────────────────────────
 
 noctalia.state.watch("bitdjinn.cmd", function(cmd)
@@ -594,6 +697,18 @@ noctalia.state.watch("bitdjinn.cmd", function(cmd)
     end
   elseif op == "remove_wallet" then
     removeWallet(cmd.address or cmd.id)
+  elseif op == "add_coin" then
+    addCoin(cmd.query, function(ok, reasonOrSymbol)
+      if ok then
+        noctalia.notify(noctalia.tr("title"), string.format(noctalia.tr("market.add_success"), reasonOrSymbol))
+      else
+        noctalia.notify(noctalia.tr("title"), noctalia.tr("market." .. (reasonOrSymbol or "not_found")))
+      end
+    end)
+  elseif op == "remove_coin" then
+    if removeCoin(cmd.id) then
+      noctalia.notify(noctalia.tr("title"), string.format(noctalia.tr("market.remove_success"), cmd.symbol or cmd.id))
+    end
   elseif op == "refresh" then
     fetchMarketPrices()
     fetchWalletBalances()

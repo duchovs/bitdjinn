@@ -1,9 +1,16 @@
 {
   "market": {
+    "add_placeholder": "Add coin (symbol or name)...",
+    "add_success": "%s added to your ticker list",
+    "duplicate_ticker": "That coin is already in your list.",
     "high24h": "24h High: %s",
+    "invalid_ticker": "Enter a coin symbol or name to add.",
     "last_updated": "Updated: %s",
     "low24h": "24h Low: %s",
-    "search_placeholder": "Filter coin symbol or name...",
+    "network_error": "Network error while looking up that coin.",
+    "not_found": "No matching coin found.",
+    "remove_confirm": "Remove from list",
+    "remove_success": "%s removed from your ticker list",
     "trend": "Trend",
     "vol24h": "24h Vol: %s"
   },

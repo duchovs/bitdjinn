@@ -8,7 +8,8 @@ local format = require("./lib/format.luau")
 -- ── UI State ───────────────────────────────────────────────────────────────
 
 local activeTab = "market" -- "market" or "wallets"
-local filterText = ""
+local addCoinInput = ""
+local addCoinDraftCounter = 0
 local inputAddress = ""
 local inputLabel = ""
 local draftCounter = 0
@@ -26,25 +27,26 @@ end
 
 local function renderMarketTab()
   local rows = {}
-  local query = string.lower(noctalia.string.trim(filterText))
 
   for _, c in ipairs(market) do
-    local matchSymbol = string.find(string.lower(c.symbol or ""), query, 1, true) ~= nil
-    local matchName = string.find(string.lower(c.name or ""), query, 1, true) ~= nil
+    local changeCol = format.changeColor(c.change24h)
+    local changeBg = format.changeBgColor(c.change24h)
+    local isPos = (c.change24h or 0) >= 0
 
-    if query == "" or matchSymbol or matchName then
-      local changeCol = format.changeColor(c.change24h)
-      local changeBg = format.changeBgColor(c.change24h)
-      local isPos = (c.change24h or 0) >= 0
-
-      table.insert(rows, ui.row({
-        key = "coin-" .. c.id,
+    table.insert(rows, ui.row({
+      key = "coin-" .. c.id,
+      gap = 8,
+      align = "center",
+      padding = 8,
+      radius = 8,
+      fill = "surface_variant/0.2",
+      border = "outline/0.15",
+    }, {
+      -- Clickable area: opens TradingView for this coin
+      ui.row({
+        flexGrow = 1,
         gap = 10,
         align = "center",
-        padding = 8,
-        radius = 8,
-        fill = "surface_variant/0.2",
-        border = "outline/0.15",
         onClick = function() openTradingView(c.symbol) end,
       }, {
         -- Coin Icon & Name
@@ -108,8 +110,19 @@ local function renderMarketTab()
             }),
           }),
         }),
-      }))
-    end
+      }),
+
+      -- Delete button (outside the TradingView click zone)
+      ui.button({
+        glyph = "trash",
+        variant = "ghost",
+        controlSize = "sm",
+        tooltip = noctalia.tr("market.remove_confirm"),
+        onClick = function()
+          noctalia.state.set("bitdjinn.cmd", { op = "remove_coin", id = c.id, symbol = c.symbol })
+        end,
+      }),
+    }))
   end
 
   if #rows == 0 then
@@ -120,16 +133,25 @@ local function renderMarketTab()
   end
 
   return ui.column({ flexGrow = 1, gap = 8 }, {
-    -- Filter Search Input
-    ui.input({
-      key = "filter-market",
-      value = filterText,
-      placeholder = noctalia.tr("market.search_placeholder"),
-      controlSize = "sm",
-      onChange = function(val)
-        filterText = val
-        render()
-      end,
+    -- Add Coin Input
+    ui.row({ gap = 6, align = "center" }, {
+      ui.input({
+        key = "input-addcoin-" .. addCoinDraftCounter,
+        value = addCoinInput,
+        placeholder = noctalia.tr("market.add_placeholder"),
+        flexGrow = 1,
+        controlSize = "sm",
+        onChange = function(val)
+          addCoinInput = val
+        end,
+        onSubmit = "onAddCoin",
+      }),
+      ui.button({
+        glyph = "plus",
+        variant = "primary",
+        controlSize = "sm",
+        onClick = "onAddCoin",
+      }),
     }),
     -- Scrollable coin list
     ui.scroll({ flexGrow = 1, gap = 6 }, rows),
@@ -426,6 +448,16 @@ end
 
 function onRefresh()
   noctalia.state.set("bitdjinn.cmd", { op = "refresh" })
+end
+
+function onAddCoin()
+  local q = noctalia.string.trim(addCoinInput)
+  if q ~= "" then
+    noctalia.state.set("bitdjinn.cmd", { op = "add_coin", query = q })
+    addCoinInput = ""
+    addCoinDraftCounter = addCoinDraftCounter + 1
+    render()
+  end
 end
 
 function onAddWallet()
