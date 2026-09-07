@@ -11,13 +11,11 @@ noctalia.setUpdateInterval(1000)
 local coinDefs = {
   { id = "bitcoin", symbol = "BTC", name = "Bitcoin", glyph = "currency-bitcoin", defaultPrice = 80000 },
   { id = "ethereum", symbol = "ETH", name = "Ethereum", glyph = "currency-ethereum", defaultPrice = 2800 },
+  { id = "zcash", symbol = "ZEC", name = "Zcash", glyph = "currency-zcash", defaultPrice = 1100 },
   { id = "solana", symbol = "SOL", name = "Solana", glyph = "currency-solana", defaultPrice = 180 },
   { id = "binancecoin", symbol = "BNB", name = "BNB", glyph = "brand-binance", defaultPrice = 600 },
   { id = "ripple", symbol = "XRP", name = "XRP", glyph = "currency-ripple", defaultPrice = 1.8 },
   { id = "dogecoin", symbol = "DOGE", name = "Dogecoin", glyph = "currency-dogecoin", defaultPrice = 0.22 },
-  { id = "tether", symbol = "USDT", name = "Tether", glyph = "currency-dollar", defaultPrice = 1.0 },
-  { id = "usd-coin", symbol = "USDC", name = "USD Coin", glyph = "currency-dollar", defaultPrice = 1.0 },
-  { id = "zcash", symbol = "ZEC", name = "Zcash", glyph = "coin", defaultPrice = 100 },
 }
 
 local MAX_HISTORY_POINTS = 36
