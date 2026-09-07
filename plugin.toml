@@ -1,11 +1,12 @@
 # BitDjinn: Real-time Cryptocurrency & Blockchain Address Tracker for Noctalia
 # Multi-currency price ticker, sparkline trend graphs, and on-chain address watcher with tx alerts.
+# Local fork of nirvam/bitdjinn with ZEC ticker support and click-to-TradingView added.
 
-id = "nirvam/bitdjinn"
-name = "BitDjinn"
+id = "duchovs/bitdjinn"
+name = "BitDjinn (local fork)"
 version = "1.0.0"
 plugin_api = 19
-author = "nirvam"
+author = "duchovs"
 license = "MIT"
 dependencies = []
 tags = ["utility", "indicator", "network", "panel", "bar"]

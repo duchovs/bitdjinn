@@ -17,6 +17,7 @@ local COIN_DEFS = {
   { id = "dogecoin", symbol = "DOGE", name = "Dogecoin", glyph = "currency-dogecoin", defaultPrice = 0.22 },
   { id = "tether", symbol = "USDT", name = "Tether", glyph = "currency-dollar", defaultPrice = 1.0 },
   { id = "usd-coin", symbol = "USDC", name = "USD Coin", glyph = "currency-dollar", defaultPrice = 1.0 },
+  { id = "zcash", symbol = "ZEC", name = "Zcash", glyph = "coin", defaultPrice = 100 },
 }
 
 local MAX_HISTORY_POINTS = 36
@@ -213,7 +214,11 @@ local function fetchMarketPrices()
 
   -- Fetch fresh exchange rates and market data in parallel
   updateExchangeRates(function()
-    local ids = "bitcoin,ethereum,solana,binancecoin,ripple,dogecoin,tether,usd-coin"
+    local idList = {}
+    for _, def in ipairs(COIN_DEFS) do
+      table.insert(idList, def.id)
+    end
+    local ids = table.concat(idList, ",")
     local url = string.format(
       "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=%s&sparkline=true&price_change_percentage=24h",
       ids

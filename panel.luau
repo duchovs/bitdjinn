@@ -19,6 +19,11 @@ local summary = {}
 
 -- ── Tab Renderers ──────────────────────────────────────────────────────────
 
+local function openTradingView(symbol: string)
+  local url = "https://www.tradingview.com/symbols/" .. symbol .. "USD/"
+  noctalia.runAsync({ "xdg-open", url })
+end
+
 local function renderMarketTab()
   local rows = {}
   local query = string.lower(noctalia.string.trim(filterText))
@@ -40,6 +45,7 @@ local function renderMarketTab()
         radius = 8,
         fill = "surface_variant/0.2",
         border = "outline/0.15",
+        onClick = function() openTradingView(c.symbol) end,
       }, {
         -- Coin Icon & Name
         ui.row({ gap = 8, align = "center", width = 110 }, {

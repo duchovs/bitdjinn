@@ -103,7 +103,7 @@ local function render()
         variant = "ghost",
         controlSize = "sm",
         onClick = function()
-          noctalia.togglePanel("nirvam/bitdjinn:panel")
+          noctalia.togglePanel("duchovs/bitdjinn:panel")
         end,
       }),
     }),

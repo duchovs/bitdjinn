@@ -88,7 +88,7 @@ local function render()
 end
 
 function onClick()
-  noctalia.togglePanel("nirvam/bitdjinn:panel")
+  noctalia.togglePanel("duchovs/bitdjinn:panel")
 end
 
 function onScroll(axis, steps, startsGesture)
