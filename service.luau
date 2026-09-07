@@ -211,6 +211,77 @@ local function updateExchangeRates(onDone: () -> ())
   end)
 end
 
+-- Rebuild the published market array from the current coin list. `coinMap` (id -> CoinGecko
+-- market item) is used when a fresh fetch succeeded; pass nil to rebuild purely from cached
+-- priceHistory/defaultPrice, so a coin list change (add/remove) is always reflected immediately
+-- even when CoinGecko is unreachable or rate-limiting us.
+local function buildMarketData(coinMap: { [string]: any }?): { any }
+  local currentRate = getRate(currentCurrency)
+  local updatedMarket = {}
+
+  for _, def in ipairs(coinDefs) do
+    local item = if coinMap ~= nil then coinMap[def.id] else nil
+    local baseUsdPrice = def.defaultPrice
+    local change = 0
+    local vol = 0
+    local high24 = 0
+    local low24 = 0
+    local sparkline = nil
+
+    if item ~= nil then
+      baseUsdPrice = tonumber(item.current_price) or def.defaultPrice
+      change = tonumber(item.price_change_percentage_24h) or 0
+      vol = tonumber(item.total_volume) or 0
+      high24 = (tonumber(item.high_24h) or 0) * currentRate
+      low24 = (tonumber(item.low_24h) or 0) * currentRate
+
+      if type(item.sparkline_in_7d) == "table" and type(item.sparkline_in_7d.price) == "table" then
+        local rawPoints = item.sparkline_in_7d.price
+        local totalRaw = #rawPoints
+        if totalRaw >= 24 then
+          local sliced = {}
+          local startIdx = math.max(1, totalRaw - 36)
+          for i = startIdx, totalRaw do
+            table.insert(sliced, rawPoints[i])
+          end
+          sparkline = sliced
+          priceHistory[def.id] = sliced
+        end
+      end
+    elseif priceHistory[def.id] ~= nil and #priceHistory[def.id] > 0 then
+      -- No fresh data for this coin (API failure, or just added): fall back to last known price
+      baseUsdPrice = priceHistory[def.id][#priceHistory[def.id]]
+    end
+
+    if sparkline == nil then
+      if priceHistory[def.id] == nil then
+        priceHistory[def.id] = {}
+      end
+      table.insert(priceHistory[def.id], baseUsdPrice)
+      if #priceHistory[def.id] > MAX_HISTORY_POINTS then
+        table.remove(priceHistory[def.id], 1)
+      end
+      sparkline = priceHistory[def.id]
+    end
+
+    table.insert(updatedMarket, {
+      id = def.id,
+      symbol = def.symbol,
+      name = def.name,
+      glyph = def.glyph,
+      baseUsdPrice = baseUsdPrice,
+      price = baseUsdPrice * currentRate,
+      change24h = change,
+      vol24h = vol * currentRate,
+      high24h = high24,
+      low24h = low24,
+      graphValues = format.normalizeForGraph(sparkline),
+    })
+  end
+
+  return updatedMarket
+end
+
 local function fetchMarketPrices()
   isUpdating = true
   publishState()
@@ -235,6 +306,7 @@ local function fetchMarketPrices()
       isUpdating = false
       if not res.ok or res.status ~= 200 then
         noctalia.log(string.format("BitDjinn: market fetch error status %d, using cached prices", res.status))
+        marketData = buildMarketData(nil)
         publishState()
         return
       end
@@ -242,6 +314,7 @@ local function fetchMarketPrices()
       local data, err = noctalia.json.decode(res.body)
       if err ~= nil or type(data) ~= "table" then
         noctalia.log("BitDjinn: json decode error for market data")
+        marketData = buildMarketData(nil)
         publishState()
         return
       end
@@ -253,67 +326,7 @@ local function fetchMarketPrices()
         end
       end
 
-      local currentRate = getRate(currentCurrency)
-      local updatedMarket = {}
-
-      for _, def in ipairs(coinDefs) do
-        local item = coinMap[def.id]
-        local baseUsdPrice = def.defaultPrice
-        local change = 0
-        local vol = 0
-        local high24 = 0
-        local low24 = 0
-        local sparkline = nil
-
-        if item ~= nil then
-          baseUsdPrice = tonumber(item.current_price) or def.defaultPrice
-          change = tonumber(item.price_change_percentage_24h) or 0
-          vol = tonumber(item.total_volume) or 0
-          high24 = (tonumber(item.high_24h) or 0) * currentRate
-          low24 = (tonumber(item.low_24h) or 0) * currentRate
-
-          if type(item.sparkline_in_7d) == "table" and type(item.sparkline_in_7d.price) == "table" then
-            local rawPoints = item.sparkline_in_7d.price
-            local totalRaw = #rawPoints
-            if totalRaw >= 24 then
-              local sliced = {}
-              local startIdx = math.max(1, totalRaw - 36)
-              for i = startIdx, totalRaw do
-                table.insert(sliced, rawPoints[i])
-              end
-              sparkline = sliced
-              priceHistory[def.id] = sliced
-            end
-          end
-        end
-
-        if sparkline == nil then
-          if priceHistory[def.id] == nil then
-            priceHistory[def.id] = {}
-          end
-          table.insert(priceHistory[def.id], baseUsdPrice)
-          if #priceHistory[def.id] > MAX_HISTORY_POINTS then
-            table.remove(priceHistory[def.id], 1)
-          end
-          sparkline = priceHistory[def.id]
-        end
-
-        table.insert(updatedMarket, {
-          id = def.id,
-          symbol = def.symbol,
-          name = def.name,
-          glyph = def.glyph,
-          baseUsdPrice = baseUsdPrice,
-          price = baseUsdPrice * currentRate,
-          change24h = change,
-          vol24h = vol * currentRate,
-          high24h = high24,
-          low24h = low24,
-          graphValues = format.normalizeForGraph(sparkline),
-        })
-      end
-
-      marketData = updatedMarket
+      marketData = buildMarketData(coinMap)
       lastMarketFetchTime = os.time()
       saveState()
       publishState()
