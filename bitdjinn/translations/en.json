@@ -2,6 +2,7 @@
   "market": {
     "add_placeholder": "Add coin (symbol or name)...",
     "add_success": "%s added to your ticker list",
+    "drag_tooltip": "Drag to reorder",
     "duplicate_ticker": "That coin is already in your list.",
     "high24h": "24h High: %s",
     "invalid_ticker": "Enter a coin symbol or name to add.",

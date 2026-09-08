@@ -636,6 +636,50 @@ local function removeCoin(idOrSymbol: string): boolean
   return true
 end
 
+-- Reorders coinDefs (and the published marketData) to match `order`, an array of coin ids.
+-- Any id in `order` that no longer exists is skipped; any coin missing from `order` is kept,
+-- appended at the end, so a stale/partial order can never drop a ticker from the list.
+local function reorderCoins(order: { string }): boolean
+  local defById = {}
+  for _, def in ipairs(coinDefs) do
+    defById[def.id] = def
+  end
+  local marketById = {}
+  for _, m in ipairs(marketData) do
+    marketById[m.id] = m
+  end
+
+  local newDefs = {}
+  local seen = {}
+  for _, id in ipairs(order) do
+    local def = defById[id]
+    if def ~= nil and not seen[id] then
+      table.insert(newDefs, def)
+      seen[id] = true
+    end
+  end
+  for _, def in ipairs(coinDefs) do
+    if not seen[def.id] then
+      table.insert(newDefs, def)
+      seen[def.id] = true
+    end
+  end
+  coinDefs = newDefs
+
+  local newMarket = {}
+  for _, def in ipairs(coinDefs) do
+    local m = marketById[def.id]
+    if m ~= nil then
+      table.insert(newMarket, m)
+    end
+  end
+  marketData = newMarket
+
+  saveState()
+  publishState()
+  return true
+end
+
 local function addCoin(query: string, onDone: (boolean, string?) -> ())
   local clean = noctalia.string.trim(query or "")
   if clean == "" then
@@ -719,6 +763,10 @@ noctalia.state.watch("bitdjinn.cmd", function(cmd)
   elseif op == "remove_coin" then
     if removeCoin(cmd.id) then
       noctalia.notify(noctalia.tr("title"), string.format(noctalia.tr("market.remove_success"), cmd.symbol or cmd.id))
+    end
+  elseif op == "reorder_coins" then
+    if type(cmd.order) == "table" then
+      reorderCoins(cmd.order)
     end
   elseif op == "refresh" then
     fetchMarketPrices()

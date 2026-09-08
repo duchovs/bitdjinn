@@ -25,6 +25,19 @@ local function openTradingView(symbol: string)
   noctalia.runAsync({ "xdg-open", url })
 end
 
+-- Thin insertion drop zone between (or after) coin rows, for drag-to-reorder.
+local function coinGapZone(anchor: string)
+  return ui.dropZone({
+    key = "coin-gap-" .. anchor,
+    accepts = { "coin" },
+    value = anchor,
+    onDrop = "onReorderCoin",
+    height = 3,
+    expandOnDrag = true,
+    hitSlop = 24,
+  })
+end
+
 local function renderMarketTab()
   local rows = {}
 
@@ -32,6 +45,8 @@ local function renderMarketTab()
     local changeCol = format.changeColor(c.change24h)
     local changeBg = format.changeBgColor(c.change24h)
     local isPos = (c.change24h or 0) >= 0
+
+    table.insert(rows, coinGapZone("before:" .. c.id))
 
     table.insert(rows, ui.row({
       key = "coin-" .. c.id,
@@ -42,6 +57,20 @@ local function renderMarketTab()
       fill = "surface_variant/0.2",
       border = "outline/0.15",
     }, {
+      -- Drag handle: press-and-drag to reorder this ticker
+      ui.dragSource({
+        key = "coin-grip-" .. c.id,
+        dragType = "coin",
+        payload = c.id,
+        previewAncestor = 1,
+        liftFromLayout = true,
+        width = 20,
+        height = 20,
+        tooltip = noctalia.tr("market.drag_tooltip"),
+      }, {
+        ui.glyph({ name = "grip-vertical", size = 16, color = "on_surface_variant" }),
+      }),
+
       -- Clickable area: opens TradingView for this coin
       ui.row({
         flexGrow = 1,
@@ -123,6 +152,10 @@ local function renderMarketTab()
         end,
       }),
     }))
+  end
+
+  if #market > 0 then
+    table.insert(rows, coinGapZone("end"))
   end
 
   if #rows == 0 then
@@ -458,6 +491,45 @@ function onAddCoin()
     addCoinDraftCounter = addCoinDraftCounter + 1
     render()
   end
+end
+
+function onReorderCoin(id: string, target: string)
+  local order = {}
+  for _, c in ipairs(market) do
+    if c.id ~= id then
+      table.insert(order, c.id)
+    end
+  end
+
+  if target == "end" then
+    table.insert(order, id)
+  else
+    local beforeId = string.match(target, "^before:(.+)$")
+    local insertIdx = #order + 1
+    for i, oid in ipairs(order) do
+      if oid == beforeId then
+        insertIdx = i
+        break
+      end
+    end
+    table.insert(order, insertIdx, id)
+  end
+
+  -- Optimistic local reorder so the drop lands instantly, without a flash
+  local byId = {}
+  for _, c in ipairs(market) do
+    byId[c.id] = c
+  end
+  local reordered = {}
+  for _, oid in ipairs(order) do
+    if byId[oid] ~= nil then
+      table.insert(reordered, byId[oid])
+    end
+  end
+  market = reordered
+  render()
+
+  noctalia.state.set("bitdjinn.cmd", { op = "reorder_coins", order = order })
 end
 
 function onAddWallet()
