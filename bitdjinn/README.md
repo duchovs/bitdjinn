@@ -18,7 +18,7 @@ noctalia msg panel-toggle nirvam/bitdjinn:panel
 ```
 
 - **Bar Widget (`bar`)**: Shows current price for your preferred coin (e.g. BTC) and a 24h change pill. Scroll vertically over the widget to cycle through watched assets. Click to open the dashboard panel.
-- **Panel (`panel`)**: Interactive multi-tab dashboard featuring real-time market cards, 36-hour sparkline trend graphs, instant currency converter (`USD`, `CNY`, `EUR`, `USDT`, `USDC`), and an on-chain address watcher with copy-to-clipboard actions.
+- **Panel (`panel`)**: Interactive multi-tab dashboard featuring real-time market cards, 36-hour sparkline trend graphs, instant currency converter (`USD`, `CNY`, `EUR`, `USDT`, `USDC`), drag-to-reorder tickers (grab the grip handle on a row), and an on-chain address watcher with copy-to-clipboard actions.
 - **Desktop Widget (`desktop`)**: HUD card pinned to the desktop displaying large price trend graphs and total portfolio valuation.
 - **Control Center Shortcut (`toggle`)**: Quick toggle tile to mute or enable desktop transaction notifications.
 

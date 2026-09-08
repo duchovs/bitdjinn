@@ -10,8 +10,8 @@ Noctalia plugin *source*.
 ## Plugins
 
 - [`bitdjinn/`](bitdjinn) — fork of [nirvam/bitdjinn](https://github.com/noctalia-dev/community-plugins/tree/main/bitdjinn),
-  renamed to `duchovs/bitdjinn`. Adds a Zcash ticker, click-through to TradingView,
-  and in-panel add/remove of tickers.
+  renamed to `duchovs/bitdjinn`. Adds click-through to TradingView, in-panel
+  add/remove of tickers, and drag-to-reorder tickers in the panel.
 
 ## Setting up on a new device
 
