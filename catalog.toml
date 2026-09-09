@@ -11,8 +11,8 @@
 [[plugin]]
 id = "duchovs/bitdjinn"
 name = "BitDjinn (local fork)"
-version = "1.1.0"
-updated_at = 1788927598
+version = "1.2.0"
+updated_at = 1788928483
 added_at = 1788809688
 author = "duchovs"
 license = "MIT"
