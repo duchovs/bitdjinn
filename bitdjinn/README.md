@@ -18,7 +18,7 @@ noctalia msg panel-toggle nirvam/bitdjinn:panel
 ```
 
 - **Bar Widget (`bar`)**: Shows current price for your preferred coin (e.g. BTC) and a 24h change pill. Scroll vertically over the widget to cycle through watched assets. Click to open the dashboard panel.
-- **Panel (`panel`)**: Interactive multi-tab dashboard featuring real-time market cards, 36-hour sparkline trend graphs, instant currency converter (`USD`, `CNY`, `EUR`, `JPY`, `ETH`), drag-to-reorder tickers (grab the grip handle on a row), and an on-chain address watcher with copy-to-clipboard actions.
+- **Panel (`panel`)**: Interactive multi-tab dashboard featuring real-time market cards, 36-hour sparkline trend graphs, instant currency converter (`USD`, `CNY`, `EUR`, `BTC`, `ETH`), drag-to-reorder tickers (grab the grip handle on a row), and an on-chain address watcher with copy-to-clipboard actions.
 - **Desktop Widget (`desktop`)**: HUD card pinned to the desktop displaying large price trend graphs and total portfolio valuation.
 - **Control Center Shortcut (`toggle`)**: Quick toggle tile to mute or enable desktop transaction notifications.
 
@@ -28,7 +28,7 @@ Configure BitDjinn under **Settings → Plugins → BitDjinn** or in `~/.config/
 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `currency` | `select` | `usd` | Display valuation currency (`usd`, `cny`, `eur`, `jpy`, `eth`). |
+| `currency` | `select` | `usd` | Display valuation currency (`usd`, `cny`, `eur`, `btc`, `eth`). |
 | `interval` | `int` | `30` | Market prices and trend sparklines refresh cadence (10–600 seconds). |
 | `wallet_interval` | `int` | `60` | On-chain address balance and transaction check cadence (15–1800 seconds). |
 | `notify_tx` | `bool` | `true` | Send desktop notifications when a balance or transaction count change is detected. |

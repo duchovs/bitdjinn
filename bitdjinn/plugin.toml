@@ -4,7 +4,7 @@
 
 id = "duchovs/bitdjinn"
 name = "BitDjinn (local fork)"
-version = "1.1.0"
+version = "1.2.0"
 plugin_api = 19
 author = "duchovs"
 license = "MIT"
@@ -35,8 +35,8 @@ default = "usd"
   label_key = "settings.currency.eur"
 
   [[setting.options]]
-  value = "jpy"
-  label_key = "settings.currency.jpy"
+  value = "btc"
+  label_key = "settings.currency.btc"
 
   [[setting.options]]
   value = "eth"

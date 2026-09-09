@@ -23,11 +23,11 @@
   },
   "settings": {
     "currency": {
+      "btc": "BTC (₿)",
       "cny": "CNY (¥)",
       "description": "Preferred currency for prices and valuation.",
       "eth": "ETH (Ξ)",
       "eur": "EUR (€)",
-      "jpy": "JPY (¥)",
       "label": "Display Currency",
       "usd": "USD ($)"
     },

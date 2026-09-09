@@ -29,13 +29,13 @@ local notifyEnabled = true
 local currentCurrency = "usd"
 local widgetCoin = "BTC"
 
--- Live exchange rates against USD (USD = 1.0; JPY/ETH are seed defaults, refreshed from
+-- Live exchange rates against USD (USD = 1.0; BTC/ETH are seed defaults, refreshed from
 -- CoinGecko on the first market fetch)
 local exchangeRates = {
   usd = 1.0,
   cny = 7.25,
   eur = 0.92,
-  jpy = 150.0,
+  btc = 1.0 / 80000.0,
   eth = 1.0 / 2800.0,
 }
 
@@ -185,7 +185,7 @@ local function publishState()
 end
 
 local function updateExchangeRates(onDone: () -> ())
-  local rateUrl = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,cny,eur,jpy,eth"
+  local rateUrl = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,cny,eur,eth"
   noctalia.http({
     url = rateUrl,
     method = "GET",
@@ -197,7 +197,6 @@ local function updateExchangeRates(onDone: () -> ())
         local bUsd = tonumber(data.bitcoin.usd) or 0
         local bCny = tonumber(data.bitcoin.cny) or 0
         local bEur = tonumber(data.bitcoin.eur) or 0
-        local bJpy = tonumber(data.bitcoin.jpy) or 0
         -- CoinGecko returns this as BTC's price in ETH (ETH per BTC); dividing by bUsd
         -- (USD per BTC) yields ETH per USD, the same "target units per 1 USD" shape as
         -- every other rate here.
@@ -205,8 +204,11 @@ local function updateExchangeRates(onDone: () -> ())
         if bUsd > 0 then
           if bCny > 0 then exchangeRates.cny = bCny / bUsd end
           if bEur > 0 then exchangeRates.eur = bEur / bUsd end
-          if bJpy > 0 then exchangeRates.jpy = bJpy / bUsd end
           if bEth > 0 then exchangeRates.eth = bEth / bUsd end
+          -- BTC's own price is the base of this query, so its BTC-per-USD rate is just
+          -- the reciprocal of bUsd -- no separate vs_currency needed (querying vs_currencies=btc
+          -- for ids=bitcoin would trivially return 1).
+          exchangeRates.btc = 1.0 / bUsd
           exchangeRates.usd = 1.0
         end
       end
