@@ -9,7 +9,11 @@ function M.currencySymbol(currency: string): string
     return "¥"
   elseif c == "eur" then
     return "€"
-  elseif c == "usdt" or c == "usdc" or c == "usd" then
+  elseif c == "jpy" then
+    return "¥"
+  elseif c == "eth" then
+    return "Ξ"
+  elseif c == "usd" then
     return "$"
   end
   return "$"
@@ -19,7 +23,11 @@ function M.formatPrice(price: number?, currency: string?): string
   if price == nil or price == 0 then
     return "--"
   end
-  local sym = M.currencySymbol(currency or "usd")
+  local c = string.lower(currency or "usd")
+  local sym = M.currencySymbol(c)
+  -- JPY has no fractional subunit, so whole-yen amounts drop the decimal places
+  -- other currencies here get.
+  local isJpy = c == "jpy"
   if price >= 1000 then
     local intPart = math.floor(price)
     local decPart = math.floor((price - intPart) * 100 + 0.5)
@@ -32,8 +40,14 @@ function M.formatPrice(price: number?, currency: string?): string
         formatted = formatted .. ","
       end
     end
+    if isJpy then
+      return string.format("%s%s", sym, formatted)
+    end
     return string.format("%s%s.%02d", sym, formatted, decPart)
   elseif price >= 1 then
+    if isJpy then
+      return string.format("%s%.0f", sym, price)
+    end
     return string.format("%s%.2f", sym, price)
   elseif price >= 0.0001 then
     return string.format("%s%.4f", sym, price)

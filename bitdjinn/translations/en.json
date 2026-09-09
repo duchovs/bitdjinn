@@ -24,12 +24,12 @@
   "settings": {
     "currency": {
       "cny": "CNY (¥)",
-      "description": "Preferred fiat/stablecoin currency for prices and valuation.",
+      "description": "Preferred currency for prices and valuation.",
+      "eth": "ETH (Ξ)",
       "eur": "EUR (€)",
+      "jpy": "JPY (¥)",
       "label": "Display Currency",
-      "usd": "USD ($)",
-      "usdc": "USDC ($)",
-      "usdt": "USDT ($)"
+      "usd": "USD ($)"
     },
     "interval": {
       "description": "How often crypto prices and trends refresh (seconds).",

@@ -384,7 +384,7 @@ function render()
     }),
   })
 
-  -- Currency Selector Bar (USD / CNY / EUR / USDT / USDC)
+  -- Currency Selector Bar (USD / CNY / EUR / JPY / ETH)
   local currencyBar = ui.row({
     align = "center",
     justify = "space_between",
@@ -415,16 +415,16 @@ function render()
         onClick = function() setCurrency("eur") end,
       }),
       ui.button({
-        text = "USDT",
-        variant = if summary.currency == "usdt" then "primary" else "ghost",
+        text = "JPY",
+        variant = if summary.currency == "jpy" then "primary" else "ghost",
         controlSize = "sm",
-        onClick = function() setCurrency("usdt") end,
+        onClick = function() setCurrency("jpy") end,
       }),
       ui.button({
-        text = "USDC",
-        variant = if summary.currency == "usdc" then "primary" else "ghost",
+        text = "ETH",
+        variant = if summary.currency == "eth" then "primary" else "ghost",
         controlSize = "sm",
-        onClick = function() setCurrency("usdc") end,
+        onClick = function() setCurrency("eth") end,
       }),
     }),
   })
