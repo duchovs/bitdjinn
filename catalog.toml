@@ -39,3 +39,16 @@ plugin_api = 9
 version = "1.0.5"
 updated_at = 1789001428
 rev = "d38def4a520bee49744520b2142bb8b524fa7bda"
+
+[[plugin]]
+id = "duchovs/claude-code"
+name = "Claude Code"
+version = "1.0.0"
+updated_at = 1789016832
+added_at = 1789016832
+author = "duchovs"
+license = "MIT"
+icon = "sparkles"
+description = "Interactive Claude Code console: a persistent streaming session, tool and thinking transcript, and plan usage."
+plugin_api = 24
+tags = ["ai", "development", "productivity", "bar", "panel", "service"]
