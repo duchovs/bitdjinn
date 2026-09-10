@@ -43,8 +43,8 @@ rev = "d38def4a520bee49744520b2142bb8b524fa7bda"
 [[plugin]]
 id = "duchovs/claude-code"
 name = "Claude Code"
-version = "1.1.0"
-updated_at = 1789019374
+version = "1.2.0"
+updated_at = 1789020812
 added_at = 1789016832
 author = "duchovs"
 license = "MIT"
