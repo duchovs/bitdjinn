@@ -3,7 +3,8 @@
 Quick markdown notes in a full-height side panel, stored as plain text files in
 a directory you control - yours to sync, edit externally, and grep. Local fork
 of [`noctalia/notes`](https://github.com/noctalia-dev/official-plugins/tree/main/notes)
-that adds a rendered markdown preview toggle to the editor.
+that adds a rendered markdown preview, Obsidian-style: a note with content
+opens showing rendered markdown, and clicking it drops you into raw editing.
 
 ## Plugin
 
@@ -26,8 +27,12 @@ that adds a rendered markdown preview toggle to the editor.
    header (press Enter to apply). The editor autosaves a couple of seconds
    after you stop typing, when you navigate away, and when the panel closes;
    Ctrl+Enter saves immediately.
-4. The eye button in the editor header toggles between the raw editor and a
-   rendered markdown preview of the same buffer.
+4. A note with content opens as a rendered markdown preview; click anywhere in
+   it, or the eye button in the editor header, to switch to the raw editor. A
+   blank note (new, or an empty scratchpad) opens straight into editing, since
+   there's nothing yet to render. The eye button also flips back to preview.
+   Click-to-edit is whole-note, not per-line - it doesn't place your cursor at
+   the spot you clicked.
 5. The pin button on a row keeps that note at the top of the list and ranks it
    higher in launcher results. Deleting asks for an inline confirmation.
 

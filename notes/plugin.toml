@@ -1,16 +1,17 @@
 # Notes: Markdown Notes for Noctalia
-# Local fork of noctalia/notes with a rendered markdown preview toggle added.
+# Local fork of noctalia/notes with a rendered markdown preview, Obsidian-style:
+# opens showing rendered markdown, click it (or the eye button) to edit raw text.
 
 id = "duchovs/notes"
 name = "Notes (local fork)"
-version = "1.1.0"
+version = "1.2.0"
 plugin_api = 21
 author = "duchovs"
 license = "MIT"
 dependencies = []
 tags = ["productivity"]
 icon = "notes"
-description = "Quick markdown notes in a full-height side panel, with a rendered preview toggle."
+description = "Quick markdown notes in a full-height side panel, with a rendered preview you click into to edit."
 
 [[setting]]
 key = "notes_dir"

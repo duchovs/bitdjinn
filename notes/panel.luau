@@ -3,8 +3,9 @@
 --
 -- Notes are plain .md files in the configured notes directory. The panel shows
 -- a note list and a multiline editor with idle autosave (flushes after a short
--- pause in typing, on navigation, and on panel close). The eye button in the
--- editor header swaps the raw buffer for a rendered ui.markdown preview of it.
+-- pause in typing, on navigation, and on panel close). Opening a note with
+-- content shows a rendered ui.markdown preview by default (Obsidian-style);
+-- click it, or the eye button in the editor header, to drop into raw editing.
 
 local AUTOSAVE_IDLE_TICKS = 2 -- 1s panel ticks with no edits before a flush
 local SCRATCHPAD_BASE = "scratchpad"
@@ -42,6 +43,12 @@ end
 
 local function notePath(file)
   return notesDir .. "/" .. file
+end
+
+-- A blank note has nothing to render, so opening one starts in edit mode
+-- instead of stranding the cursor behind an empty, unclickable preview.
+local function hasContent(text)
+  return text:match("%S") ~= nil
 end
 
 local function scratchName()
@@ -134,7 +141,7 @@ local function openNote(file)
   dirty = false
   idleTicks = 0
   pendingDelete = nil
-  previewing = false
+  previewing = hasContent(buffer)
   render()
 end
 
@@ -339,12 +346,20 @@ end
 
 local function editorBody()
   if previewing then
-    -- ui.markdown is a read-only render block; it re-parses when `text` changes,
-    -- so this stays live against `buffer` even though nothing here can edit it.
-    return ui.markdown({
+    -- ui.markdown is a read-only render block and its onClick isn't a thing, so a
+    -- clickable wrapper is what gets Obsidian-style click-to-edit: click anywhere
+    -- in the rendered note to drop into the raw editor. Whole-block, not per-line -
+    -- click handlers here don't report a position to place the cursor at.
+    return ui.column({
       key = "preview-" .. current,
-      text = buffer,
       flexGrow = 1,
+      align = "stretch",
+      onClick = "onEnterEdit",
+    }, {
+      ui.markdown({
+        text = buffer,
+        flexGrow = 1,
+      }),
     })
   end
   return ui.input({
@@ -528,6 +543,11 @@ end
 
 function onTogglePreview()
   previewing = not previewing
+  render()
+end
+
+function onEnterEdit()
+  previewing = false
   render()
 end
 
