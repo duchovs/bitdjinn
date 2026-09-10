@@ -1,0 +1,148 @@
+{
+  "composer": {
+    "placeholder": "Ask Claude Code…  /  for commands",
+    "send": "Send",
+    "stop": "Stop this turn"
+  },
+  "empty": {
+    "hint": "Slash commands go straight to Claude Code. /new starts a fresh session, /cwd sets the working directory.",
+    "title": "No messages yet"
+  },
+  "error": {
+    "no_bridge": "Could not reach the Claude Code bridge. Check the shell log for bridge.py errors.",
+    "no_claude": "The claude CLI was not found. Install Claude Code, or set the binary path in this plugin's settings.",
+    "no_python": "python3 was not found on PATH. The bridge that hosts the Claude Code session needs it."
+  },
+  "header": {
+    "mode_tooltip": "Permission mode — applied to the live session",
+    "model_tooltip": "Model — applied to the live session",
+    "model_unset": "Model"
+  },
+  "mode": {
+    "accept_edits": "Accept edits",
+    "auto": "Auto",
+    "bypass_permissions": "Bypass",
+    "default": "Default",
+    "dont_ask": "Don't ask",
+    "manual": "Manual",
+    "plan": "Plan"
+  },
+  "mode_hint": {
+    "accept_edits": "File edits apply without asking",
+    "auto": "Claude Code decides when to ask",
+    "bypass_permissions": "No prompts at all — full access",
+    "default": "Ask before anything risky",
+    "dont_ask": "Never prompt; denied actions just fail",
+    "manual": "Ask for every tool call",
+    "plan": "Read and reason only, no changes"
+  },
+  "notify": {
+    "done": {
+      "body": "The turn finished while the console was closed.",
+      "title": "Claude Code is done"
+    },
+    "error": {
+      "title": "Claude Code session error"
+    },
+    "permission": {
+      "body": "A tool call is waiting for you to allow or deny it.",
+      "title": "Claude Code needs permission"
+    }
+  },
+  "permission": {
+    "allow": "Allow",
+    "allowed": "Allowed",
+    "cancelled": "Withdrawn before it was answered",
+    "denied": "Denied",
+    "deny": "Deny",
+    "title": "Allow {tool}?"
+  },
+  "settings": {
+    "binary": {
+      "description": "Name or absolute path of the Claude Code CLI",
+      "label": "Claude Code binary"
+    },
+    "idle_shutdown_minutes": {
+      "description": "Stop the background session after this many idle minutes. 0 keeps it warm, which is what makes replies start instantly.",
+      "label": "Idle shutdown (minutes)"
+    },
+    "notify_on_idle": {
+      "description": "Send a notification when a turn finishes or needs permission while the console is closed",
+      "label": "Notify when the console is closed"
+    },
+    "permission_prompts": {
+      "description": "What to do when the session asks to use a tool",
+      "label": "Tool permission requests",
+      "options": {
+        "allow": "Allow automatically",
+        "ask": "Ask in the console",
+        "deny": "Deny automatically"
+      }
+    },
+    "permission_timeout": {
+      "description": "How long an unanswered permission request waits before it is denied, so a forgotten prompt cannot wedge the session",
+      "label": "Permission timeout (seconds)"
+    },
+    "pill_content": {
+      "description": "What the bar pill shows",
+      "label": "Bar pill content",
+      "options": {
+        "auto": "Status while running, otherwise usage",
+        "glyph": "Icon only",
+        "status": "Session status",
+        "usage": "Usage percentage"
+      }
+    },
+    "show_glyph": {
+      "label": "Show the icon in the bar"
+    },
+    "usage_refresh_minutes": {
+      "description": "How often to re-read your subscription usage",
+      "label": "Usage refresh (minutes)"
+    },
+    "usage_window": {
+      "description": "Which rate-limit window the pill's percentage tracks",
+      "label": "Usage window",
+      "options": {
+        "max": "Whichever is higher",
+        "session": "5-hour session",
+        "weekly": "Weekly"
+      }
+    },
+    "working_dir": {
+      "description": "Directory Claude Code starts in. Empty means your home directory. /cwd changes it for the running session.",
+      "label": "Working directory"
+    }
+  },
+  "status": {
+    "awaiting": "Awaiting permission",
+    "busy": "Working",
+    "error": "Error",
+    "idle": "Ready",
+    "off": "Not running",
+    "starting": "Starting…"
+  },
+  "time": {
+    "now": "now",
+    "soon": "under a minute"
+  },
+  "title": "Claude Code",
+  "tooltip": {
+    "cwd": "Working directory",
+    "error": "Error",
+    "mode": "Permission mode",
+    "model": "Model",
+    "plan": "Plan",
+    "session": "Session usage",
+    "unknown": "Unknown",
+    "usage": "Usage",
+    "usage_unavailable": "Unavailable",
+    "weekly": "Weekly usage"
+  },
+  "transcript": {
+    "earlier": "{count} earlier messages not shown",
+    "thinking": "Thinking",
+    "tokens": "{out} out · {cached} cached",
+    "truncated": "Output truncated — see the full result in the session log."
+  }
+}

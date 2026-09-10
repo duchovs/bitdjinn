@@ -1,0 +1,183 @@
+# Claude Code — an interactive Claude Code console for Noctalia v5.
+#
+# Architecture, in one paragraph: a Python sidecar (bridge.py) owns ONE long-lived
+# `claude -p --input-format stream-json --output-format stream-json` process and
+# exposes it over loopback HTTP + SSE. The session is opened once and reused for
+# every turn, so the Node/MCP bootstrap and the cached system-prompt prefix are
+# paid once per session rather than once per message. The [[panel]] is a thin SSE
+# client of that bridge; the headless [[service]] owns the subscription plan usage
+# poll (plain noctalia.http against the same endpoint Claude Code itself uses) and
+# publishes a compact status/usage snapshot the [[widget]] and [[shortcut]] watch.
+#
+# Deliberately few settings. Model, permission mode, effort, output style, agent
+# and every other Claude Code option are runtime state the CLI already owns — the
+# console reads them from the session's own `initialize` handshake and changes
+# them through the control protocol (set_model / set_permission_mode) or by simply
+# forwarding a slash command. Hardcoding that surface here is what made the v4
+# plugin rot; the settings below are only what the *shell* needs to know.
+
+id = "duchovs/claude-code"
+name = "Claude Code"
+version = "1.0.0"
+# Oldest API level actually used. The gate is runAsync with an argv table (24),
+# which is how the sidecar is launched without a shell. Everything else sits
+# lower: require of a relative module (22), ui.markdown + ui.scroll stickToBottom
+# + ui.input submitOnEnter (21), panel.setNeedsFrameTick (18), httpStream (4).
+# The pickers render inline rather than through panel.openContextMenu precisely
+# so this stays at 24 instead of 28.
+plugin_api = 24
+author = "duchovs"
+license = "MIT"
+icon = "sparkles"
+description = "Interactive Claude Code console: a persistent streaming session, tool and thinking transcript, and plan usage."
+tags = ["ai", "development", "productivity", "bar", "panel", "service"]
+
+# python3 runs the bridge (standard library only — no pip install, no node_modules).
+# claude is the CLI itself. Both are checked with commandExists before spawning and
+# reported as a status instead of failing silently.
+dependencies = ["python3", "claude"]
+
+# ── Plugin-level settings ───────────────────────────────────────────────────
+
+[[setting]]
+key = "binary"
+type = "string"
+label_key = "settings.binary.label"
+description_key = "settings.binary.description"
+default = "claude"
+
+# Empty means $HOME. /cwd changes it for the running session and remembers the
+# choice in the plugin's data dir (the API has no setter for a plugin's own
+# settings), so it survives a restart; clearing that file falls back to this.
+[[setting]]
+key = "working_dir"
+type = "string"
+label_key = "settings.working_dir.label"
+description_key = "settings.working_dir.description"
+default = ""
+
+# What to do when the session asks permission for a tool (a can_use_tool control
+# request). "ask" renders an Allow/Deny card in the transcript and blocks the turn
+# until answered or the timeout below expires.
+[[setting]]
+key = "permission_prompts"
+type = "select"
+label_key = "settings.permission_prompts.label"
+description_key = "settings.permission_prompts.description"
+default = "ask"
+options = [
+  { value = "ask", label_key = "settings.permission_prompts.options.ask" },
+  { value = "allow", label_key = "settings.permission_prompts.options.allow" },
+  { value = "deny", label_key = "settings.permission_prompts.options.deny" },
+]
+
+# An unanswered prompt must not wedge the session forever. On expiry the bridge
+# answers deny with a message saying it timed out, which the transcript shows.
+[[setting]]
+key = "permission_timeout"
+type = "int"
+label_key = "settings.permission_timeout.label"
+description_key = "settings.permission_timeout.description"
+default = 120
+min = 15
+max = 900
+
+# 0 keeps the session warm forever — the default, because keeping it warm is the
+# entire point of the sidecar. Set a value to reclaim the process when idle.
+[[setting]]
+key = "idle_shutdown_minutes"
+type = "int"
+label_key = "settings.idle_shutdown_minutes.label"
+description_key = "settings.idle_shutdown_minutes.description"
+default = 0
+min = 0
+max = 240
+
+[[setting]]
+key = "usage_refresh_minutes"
+type = "int"
+label_key = "settings.usage_refresh_minutes.label"
+description_key = "settings.usage_refresh_minutes.description"
+default = 5
+min = 1
+max = 60
+
+# Notify when a turn finishes or a permission is pending while the console is
+# closed — the thing the v4 plugin structurally could not do, since its process
+# lived inside the panel.
+[[setting]]
+key = "notify_on_idle"
+type = "bool"
+label_key = "settings.notify_on_idle.label"
+description_key = "settings.notify_on_idle.description"
+default = true
+
+# ── Entries ─────────────────────────────────────────────────────────────────
+
+# Headless: usage poll, bridge supervision, status publication, notifications.
+[[service]]
+id = "service"
+entry = "service.luau"
+
+# The console. Sized generously: this is a transcript, not a popover.
+[[panel]]
+id = "console"
+entry = "panel.luau"
+width = 560
+height = 720
+placement = "attached"
+position = "auto"
+open_near_click = true
+dismiss_on_outside_click = false
+# Enter submits (the input sets submitOnEnter), so these are the extras: Ctrl+C
+# interrupts the running turn, Ctrl+L clears the transcript, Ctrl+K toggles the
+# slash palette. Escape is host-reserved and always closes the panel.
+capture_keys = ["ctrl+c", "ctrl+l", "ctrl+k"]
+
+[[widget]]
+id = "pill"
+entry = "widget.luau"
+
+  [widget.actions]
+  left = "panel-toggle duchovs/claude-code:console"
+  # Middle defaults to settings-open-widget shell-wide, so onMiddleClick never
+  # fires unless it is unbound here. Interrupting the turn is the useful gesture.
+  middle = "none"
+  right = "plugin duchovs/claude-code:service all refresh"
+
+  [[widget.setting]]
+  key = "pill_content"
+  type = "select"
+  label_key = "settings.pill_content.label"
+  description_key = "settings.pill_content.description"
+  default = "auto"
+  options = [
+    { value = "auto", label_key = "settings.pill_content.options.auto" },
+    { value = "status", label_key = "settings.pill_content.options.status" },
+    { value = "usage", label_key = "settings.pill_content.options.usage" },
+    { value = "glyph", label_key = "settings.pill_content.options.glyph" },
+  ]
+
+  [[widget.setting]]
+  key = "usage_window"
+  type = "select"
+  label_key = "settings.usage_window.label"
+  description_key = "settings.usage_window.description"
+  default = "session"
+  options = [
+    { value = "session", label_key = "settings.usage_window.options.session" },
+    { value = "weekly", label_key = "settings.usage_window.options.weekly" },
+    { value = "max", label_key = "settings.usage_window.options.max" },
+  ]
+
+  [[widget.setting]]
+  key = "show_glyph"
+  type = "bool"
+  label_key = "settings.show_glyph.label"
+  default = true
+
+# Control-center tile: at a glance whether a turn is running, one click to open
+# the console, and a live-colored icon when the session wants a permission answer.
+[[shortcut]]
+id = "toggle"
+entry = "shortcut.luau"

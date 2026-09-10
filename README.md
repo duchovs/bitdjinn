@@ -9,6 +9,13 @@ Noctalia plugin *source*.
 
 ## Plugins
 
+- [`claude-code/`](claude-code) — original, not a fork. An interactive Claude Code
+  console: a persistent streaming session behind a small Python sidecar (the Luau
+  API can read a process but not write to one), a transcript that formats
+  thinking, tool calls and their output, inline Allow/Deny cards for tool
+  permission requests, and subscription usage in the bar. Model and permission
+  mode are read from the live session and changed through the CLI's own control
+  protocol, so nothing about Claude Code's options is hardcoded here.
 - [`bitdjinn/`](bitdjinn) — fork of [nirvam/bitdjinn](https://github.com/noctalia-dev/community-plugins/tree/main/bitdjinn),
   renamed to `duchovs/bitdjinn`. Adds click-through to TradingView, in-panel
   add/remove of tickers, and drag-to-reorder tickers in the panel.
