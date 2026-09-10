@@ -20,3 +20,22 @@ icon = "currency-bitcoin"
 description = "Real-time cryptocurrency ticker, trend charts, and blockchain balance monitoring with transaction alerts."
 plugin_api = 19
 tags = ["utility", "indicator", "network", "panel", "bar"]
+
+[[plugin]]
+id = "duchovs/notes"
+name = "Notes (local fork)"
+version = "1.1.0"
+updated_at = 1789001562
+added_at = 1789001562
+author = "duchovs"
+license = "MIT"
+icon = "notes"
+description = "Quick markdown notes in a full-height side panel, with a rendered preview toggle."
+plugin_api = 21
+tags = ["productivity"]
+
+[[plugin.release]]
+plugin_api = 9
+version = "1.0.5"
+updated_at = 1789001428
+rev = "d38def4a520bee49744520b2142bb8b524fa7bda"
