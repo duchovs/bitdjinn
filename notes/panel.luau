@@ -3,7 +3,8 @@
 --
 -- Notes are plain .md files in the configured notes directory. The panel shows
 -- a note list and a multiline editor with idle autosave (flushes after a short
--- pause in typing, on navigation, and on panel close).
+-- pause in typing, on navigation, and on panel close). The eye button in the
+-- editor header swaps the raw buffer for a rendered ui.markdown preview of it.
 
 local AUTOSAVE_IDLE_TICKS = 2 -- 1s panel ticks with no edits before a flush
 local SCRATCHPAD_BASE = "scratchpad"
@@ -19,6 +20,7 @@ local editorRev = 0 -- bumped to reseed the editor input after external changes
 local dirty = false
 local idleTicks = 0
 local pendingDelete = nil -- filename awaiting the second (confirm) click
+local previewing = false -- editor view only: rendered markdown instead of the raw buffer
 local sortByDate = false
 local pins = {} -- filename -> true; persisted in a sidecar next to the notes
 local hoveredKey = nil
@@ -132,6 +134,7 @@ local function openNote(file)
   dirty = false
   idleTicks = 0
   pendingDelete = nil
+  previewing = false
   render()
 end
 
@@ -309,6 +312,11 @@ local function editorHeader()
     trailing = deleteControls(current, "noteEditorDelete", 0)
   else
     trailing = {
+      ui.button({
+        glyph = previewing and "eye-off" or "eye",
+        variant = "ghost",
+        onClick = "onTogglePreview",
+      }),
       ui.button({ glyph = "trash", variant = "ghost", onClick = "onEditorDelete" }),
     }
   end
@@ -329,20 +337,33 @@ local function editorHeader()
   return ui.row({ gap = 6, align = "center" }, children)
 end
 
+local function editorBody()
+  if previewing then
+    -- ui.markdown is a read-only render block; it re-parses when `text` changes,
+    -- so this stays live against `buffer` even though nothing here can edit it.
+    return ui.markdown({
+      key = "preview-" .. current,
+      text = buffer,
+      flexGrow = 1,
+    })
+  end
+  return ui.input({
+    -- The rev reseeds the (uncontrolled) editor when the file changed under us.
+    key = "editor-" .. current .. "-" .. editorRev,
+    value = buffer,
+    multiline = true,
+    focus = true,
+    flexGrow = 1,
+    placeholder = tr("editor_placeholder"),
+    onChange = "onEdited",
+    onSubmit = "onFlushNow",
+  })
+end
+
 local function editorView()
   return ui.column({ flexGrow = 1, gap = 8, align = "stretch" }, {
     editorHeader(),
-    ui.input({
-      -- The rev reseeds the (uncontrolled) editor when the file changed under us.
-      key = "editor-" .. current .. "-" .. editorRev,
-      value = buffer,
-      multiline = true,
-      focus = true,
-      flexGrow = 1,
-      placeholder = tr("editor_placeholder"),
-      onChange = "onEdited",
-      onSubmit = "onFlushNow",
-    }),
+    editorBody(),
     ui.label({
       text = editorStatusLine(),
       fontSize = 11,
@@ -505,12 +526,18 @@ function onEditorDelete()
   render()
 end
 
+function onTogglePreview()
+  previewing = not previewing
+  render()
+end
+
 function onBack()
   flush()
   view = "list"
   current = nil
   buffer = ""
   pendingDelete = nil
+  previewing = false
   refreshFiles()
   render()
 end

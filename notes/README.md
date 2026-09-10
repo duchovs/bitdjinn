@@ -1,13 +1,15 @@
-# Notes
+# Notes (local fork)
 
-Quick notes in a full-height side panel, stored as plain text files in a
-directory you control - yours to sync, edit externally, and grep.
+Quick markdown notes in a full-height side panel, stored as plain text files in
+a directory you control - yours to sync, edit externally, and grep. Local fork
+of [`noctalia/notes`](https://github.com/noctalia-dev/official-plugins/tree/main/notes)
+that adds a rendered markdown preview toggle to the editor.
 
 ## Plugin
 
 | Field | Value |
 | --- | --- |
-| ID | `noctalia/notes` |
+| ID | `duchovs/notes` |
 | Entries | Panel: `panel`; bar widget: `notes`; launcher provider: `launcher` |
 | Launcher Prefix | `/nt` |
 
@@ -17,14 +19,16 @@ directory you control - yours to sync, edit externally, and grep.
 2. Add the `notes` bar widget and click it, or run:
 
    ```sh
-   noctalia msg panel-toggle noctalia/notes:panel
+   noctalia msg panel-toggle duchovs/notes:panel
    ```
 
 3. **+** creates a note named after the current time; rename it from the editor
    header (press Enter to apply). The editor autosaves a couple of seconds
    after you stop typing, when you navigate away, and when the panel closes;
    Ctrl+Enter saves immediately.
-4. The pin button on a row keeps that note at the top of the list and ranks it
+4. The eye button in the editor header toggles between the raw editor and a
+   rendered markdown preview of the same buffer.
+5. The pin button on a row keeps that note at the top of the list and ranks it
    higher in launcher results. Deleting asks for an inline confirmation.
 
 A pinned **Scratchpad** note always sits at the top of the list - the place to
@@ -44,9 +48,9 @@ type it, press Enter, done.
 ## IPC
 
 ```sh
-noctalia msg panel-toggle noctalia/notes:panel   # toggle the panel
-noctalia msg panel-open noctalia/notes:panel     # open it
-noctalia msg panel-close                         # close the open panel
+noctalia msg panel-toggle duchovs/notes:panel   # toggle the panel
+noctalia msg panel-open duchovs/notes:panel     # open it
+noctalia msg panel-close                        # close the open panel
 ```
 
 ## Settings

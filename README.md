@@ -12,6 +12,10 @@ Noctalia plugin *source*.
 - [`bitdjinn/`](bitdjinn) — fork of [nirvam/bitdjinn](https://github.com/noctalia-dev/community-plugins/tree/main/bitdjinn),
   renamed to `duchovs/bitdjinn`. Adds click-through to TradingView, in-panel
   add/remove of tickers, and drag-to-reorder tickers in the panel.
+- [`notes/`](notes) — fork of [noctalia/notes](https://github.com/noctalia-dev/official-plugins/tree/main/notes),
+  renamed to `duchovs/notes`. Adds an eye-button toggle in the editor header
+  that swaps the raw buffer for a rendered `ui.markdown` preview (requires
+  `plugin_api >= 21`).
 
 ## Setting up on a new device
 
