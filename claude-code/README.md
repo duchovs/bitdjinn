@@ -68,6 +68,7 @@ are about the console rather than the conversation:
 | Command | Does |
 | --- | --- |
 | `/new` | Start a fresh session |
+| `/resume` | Open the session picker for this directory |
 | `/clear` | Clear the transcript view (the session keeps its history) |
 | `/stop` | Interrupt the running turn |
 | `/cwd <path>` | Change the working directory and restart the session there |
@@ -95,6 +96,22 @@ like any other command. The CLI has no way to report effort back, so the console
 reads the starting value from your Claude Code settings (`effortLevel`, and any
 per-model override in `modelSettings`) and then follows the `/effort` commands you
 send.
+
+### Resuming a session
+
+The history icon on the directory line opens every session Claude Code has
+stored for the current working directory, newest first, labelled with the title
+Claude Code generated for it. `/resume` opens the same list. Picking one restarts
+the session with `--resume` and **replays the conversation into the panel**, so
+you rejoin a transcript rather than an empty box — the last 120 messages, tool
+calls and their results included.
+
+The list is read from Claude Code's own session store. Rather than reconstruct
+the directory-name encoding it uses, the console identifies the right folder by
+the working directory recorded inside the session files themselves, so it stays
+correct if that encoding ever changes.
+
+`/new` starts a fresh session and leaves the old one on disk, still resumable.
 
 ### Permission requests
 

@@ -5,7 +5,7 @@
     "stop": "Stop this turn"
   },
   "empty": {
-    "hint": "Slash commands go straight to Claude Code. /new starts a fresh session, /cwd sets the working directory.",
+    "hint": "Slash commands go straight to Claude Code. /new starts a fresh session, /resume reopens an earlier one, /cwd sets the working directory.",
     "title": "No messages yet"
   },
   "error": {
@@ -16,7 +16,8 @@
   "header": {
     "mode_tooltip": "Permission mode — applied to the live session",
     "model_tooltip": "Model — applied to the live session",
-    "model_unset": "Model"
+    "model_unset": "Model",
+    "sessions_tooltip": "Earlier sessions in this directory"
   },
   "mode": {
     "accept_edits": "Accept edits",
@@ -56,6 +57,10 @@
     "denied": "Denied",
     "deny": "Deny",
     "title": "Allow {tool}?"
+  },
+  "sessions": {
+    "loading": "Reading earlier sessions…",
+    "none": "No earlier sessions in this directory"
   },
   "settings": {
     "binary": {
@@ -123,6 +128,8 @@
     "starting": "Starting…"
   },
   "time": {
+    "ago": "{value} ago",
+    "just_now": "just now",
     "now": "now",
     "soon": "under a minute"
   },

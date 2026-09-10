@@ -298,6 +298,174 @@ def block_text(block: dict) -> str:
     return ""
 
 
+# ── Stored sessions ─────────────────────────────────────────────────────────
+
+# Claude Code keeps one JSONL per session under a per-directory folder whose name
+# is the working directory with the separators rewritten. Rather than reproduce
+# that encoding (and get it subtly wrong), each folder is identified by reading
+# the `cwd` its own records carry.
+SESSIONS_ROOT = "~/.claude/projects"
+# A title lands within the first exchange, so a full scan of what can be a
+# multi-megabyte transcript is never needed just to label a row.
+TITLE_SCAN_LINES = 400
+
+
+def _iter_json_lines(path: str, limit: int | None = None):
+    try:
+        with open(path, "r", errors="replace") as handle:
+            for number, line in enumerate(handle):
+                if limit is not None and number >= limit:
+                    return
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    yield json.loads(line)
+                except ValueError:
+                    continue
+    except OSError:
+        return
+
+
+def session_dir_for(cwd: str) -> str | None:
+    """The folder holding sessions for `cwd`, found by what the records say."""
+    root = os.path.expanduser(SESSIONS_ROOT)
+    if not os.path.isdir(root) or not cwd:
+        return None
+    target = os.path.realpath(cwd)
+    for name in os.listdir(root):
+        folder = os.path.join(root, name)
+        if not os.path.isdir(folder):
+            continue
+        files = [f for f in os.listdir(folder) if f.endswith(".jsonl")]
+        if not files:
+            continue
+        probe = os.path.join(folder, files[0])
+        for record in _iter_json_lines(probe, 50):
+            recorded = record.get("cwd")
+            if isinstance(recorded, str) and recorded:
+                if os.path.realpath(recorded) == target:
+                    return folder
+                break
+    return None
+
+
+def list_sessions(cwd: str) -> list[dict]:
+    folder = session_dir_for(cwd)
+    if folder is None:
+        return []
+    rows = []
+    for name in os.listdir(folder):
+        if not name.endswith(".jsonl"):
+            continue
+        path = os.path.join(folder, name)
+        try:
+            stat = os.stat(path)
+        except OSError:
+            continue
+        if stat.st_size == 0:
+            continue
+        title = ""
+        fallback = ""
+        for record in _iter_json_lines(path, TITLE_SCAN_LINES):
+            kind = record.get("type")
+            if kind == "custom-title" and isinstance(record.get("customTitle"), str):
+                title = record["customTitle"]
+                break
+            if kind == "ai-title" and isinstance(record.get("aiTitle"), str):
+                title = record["aiTitle"]
+                break
+            if not fallback and kind == "user" and not record.get("isMeta") and not record.get("isSidechain"):
+                content = (record.get("message") or {}).get("content")
+                text = content if isinstance(content, str) else ""
+                # Slash-command echoes and injected caveats are wrapped in tags;
+                # they name the machinery, not what the session was about.
+                if isinstance(text, str) and text.lstrip()[:1] not in ("<", ""):
+                    condensed = " ".join(text.split())
+                    if len(condensed) >= 3:
+                        fallback = condensed[:80]
+        rows.append(
+            {
+                "id": name[:-6],
+                "title": title or fallback or name[:-6][:8],
+                "mtime": int(stat.st_mtime),
+                "bytes": stat.st_size,
+            }
+        )
+    rows.sort(key=lambda row: row["mtime"], reverse=True)
+    return rows[:40]
+
+
+def load_history(cwd: str, session_id: str, limit: int = 120) -> list[dict]:
+    """Replay a stored session into transcript items.
+
+    Resuming into an empty panel would hide the very context being resumed, so
+    the prior exchange is rebuilt from the same JSONL the CLI reads. Sidechain
+    (subagent) and meta records are skipped: they are machinery, not the
+    conversation.
+    """
+    folder = session_dir_for(cwd)
+    if folder is None:
+        return []
+    path = os.path.join(folder, session_id + ".jsonl")
+    if not os.path.isfile(path):
+        return []
+
+    items: list[dict] = []
+    pending: dict[str, int] = {}
+    for record in _iter_json_lines(path):
+        if record.get("isSidechain") or record.get("isMeta"):
+            continue
+        kind = record.get("type")
+        message = record.get("message") or {}
+        content = message.get("content")
+        stamp = 0
+
+        if kind == "user":
+            if isinstance(content, str):
+                text = content.strip()
+                if text and not text.startswith("<"):
+                    items.append({"kind": "user", "text": text, "ts": stamp})
+            elif isinstance(content, list):
+                for block in content:
+                    if not isinstance(block, dict) or block.get("type") != "tool_result":
+                        continue
+                    position = pending.get(block.get("tool_use_id") or "")
+                    if position is None:
+                        continue
+                    body = block_text(block)
+                    items[position]["state"] = "error" if block.get("is_error") else "ok"
+                    items[position]["output"] = body[:TOOL_OUTPUT_CLAMP]
+                    items[position]["truncated"] = len(body) > TOOL_OUTPUT_CLAMP
+        elif kind == "assistant" and isinstance(content, list):
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "text" and (block.get("text") or "").strip():
+                    items.append({"kind": "assistant", "text": block["text"], "streaming": False, "ts": stamp})
+                elif block.get("type") == "thinking" and (block.get("thinking") or "").strip():
+                    items.append({"kind": "thinking", "text": block["thinking"], "streaming": False, "ts": stamp})
+                elif block.get("type") == "tool_use":
+                    name = block.get("name") or "tool"
+                    payload = block.get("input") or {}
+                    pending[block.get("id") or ""] = len(items)
+                    items.append(
+                        {
+                            "kind": "tool",
+                            "tid": block.get("id") or "",
+                            "name": name,
+                            "risk": classify_tool(name),
+                            "summary": summarize_tool(name, payload),
+                            "input": json.dumps(payload, indent=2)[:4000],
+                            "state": "ok",
+                            "output": "",
+                            "ts": stamp,
+                        }
+                    )
+
+    return items[-limit:]
+
+
 # ── The session ─────────────────────────────────────────────────────────────
 
 
@@ -957,6 +1125,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(200, self.app.tx.snapshot())
         if path == "/usage":
             return self.reply(200, self.app.usage())
+        if path == "/sessions":
+            return self.reply(200, {"sessions": list_sessions(self.app.current_cwd())})
         if path == "/events":
             return self.stream_events()
         self.reply(404, {"error": "not found"})
@@ -1014,6 +1184,17 @@ class Handler(BaseHTTPRequestHandler):
                 app.session.restart(resume=None, working_dir=payload.get("cwd") or "")
             elif action == "options":
                 app.session.options.update(payload.get("options") or {})
+            elif action == "resume":
+                session_id = str(payload.get("id") or "")
+                if not session_id:
+                    return self.reply(400, {"error": "missing id"})
+                # Replay first, then hand the id to the CLI: the panel should
+                # show the conversation it is rejoining, not an empty box.
+                history = load_history(app.current_cwd(), session_id)
+                app.tx.reset()
+                for item in history:
+                    app.tx.append(item)
+                app.session.restart(resume=session_id)
             elif action == "start":
                 # Warm the CLI when the console opens rather than on the first
                 # message, so its Node/MCP boot overlaps with the user typing
@@ -1077,6 +1258,13 @@ class App:
         self._usage_cache: dict = {"ok": False, "error": "not_fetched"}
         self._usage_at = 0.0
         self._stopping = False
+
+    def current_cwd(self) -> str:
+        recorded = self.tx.status.get("cwd")
+        if isinstance(recorded, str) and recorded:
+            return recorded
+        configured = self.options.get("working_dir") or ""
+        return configured or os.path.expanduser("~")
 
     def ensure_session(self) -> None:
         if not self.session.alive():

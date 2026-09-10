@@ -212,6 +212,25 @@ function M.until_(unixSeconds: number?): string
   return noctalia.tr("time.soon")
 end
 
+-- "just now" / "14m ago" / "3h ago" / "2d ago". Coarser than until_, because a
+-- session list is scanned for recency, not read for precision.
+function M.ago(unixSeconds: number?): string
+  if type(unixSeconds) ~= "number" or unixSeconds <= 0 then
+    return ""
+  end
+  local elapsed = os.time() - unixSeconds
+  if elapsed < 60 then
+    return noctalia.tr("time.just_now")
+  end
+  if elapsed < 3600 then
+    return noctalia.tr("time.ago", { value = string.format("%dm", math.floor(elapsed / 60)) })
+  end
+  if elapsed < 86400 then
+    return noctalia.tr("time.ago", { value = string.format("%dh", math.floor(elapsed / 3600)) })
+  end
+  return noctalia.tr("time.ago", { value = string.format("%dd", math.floor(elapsed / 86400)) })
+end
+
 function M.duration(ms: number?): string
   if type(ms) ~= "number" or ms <= 0 then
     return ""

@@ -26,6 +26,8 @@ local inputKey = 1        -- bumped to force a fresh (and re-focused) input
 local expanded = {}       -- item id -> true, for tool output / thinking
 local palette = false
 local paletteFilter = ""
+local sessions = {}
+local sessionsPending = false
 local dirty = true
 local ticking = false
 local notice = ""
@@ -194,6 +196,15 @@ local function submit(text: string)
     return
   elseif command == "stop" then
     shared.post("/control", { subtype = "interrupt" })
+    draft = ""
+    inputKey += 1
+    markDirty()
+    return
+  elseif command == "resume" then
+    -- The CLI's own /resume opens a terminal picker that has nowhere to draw
+    -- here, so the console answers this one itself.
+    picker = "session"
+    loadSessions()
     draft = ""
     inputKey += 1
     markDirty()
@@ -497,8 +508,27 @@ end
 -- expect here. It also keeps them consistent with the slash palette.
 local picker = ""  -- "" | "model" | "mode"
 
+local function loadSessions()
+  if sessionsPending then
+    return
+  end
+  sessionsPending = true
+  shared.get("/sessions", function(data)
+    sessionsPending = false
+    if type(data) == "table" and type(data.sessions) == "table" then
+      sessions = data.sessions
+    end
+    markDirty()
+  end)
+end
+
 local function togglePicker(which: string)
   picker = (picker == which) and "" or which
+  -- Re-read on every open: a session that was live a moment ago has a newer
+  -- title and timestamp than the last look.
+  if picker == "session" then
+    loadSessions()
+  end
   markDirty()
 end
 
@@ -543,6 +573,56 @@ local function pickerRows()
           }),
         })
       end
+    end
+  elseif picker == "session" then
+    if #sessions == 0 then
+      rows[#rows + 1] = ui.label({
+        key = "nosessions",
+        text = noctalia.tr(sessionsPending and "sessions.loading" or "sessions.none"),
+        fontSize = 11,
+        color = "on_surface_variant",
+      })
+    end
+    for index, entry in ipairs(sessions) do
+      if index > 12 then
+        break
+      end
+      local id = tostring(entry.id or "")
+      local current = id == tostring(status.session_id or "")
+      rows[#rows + 1] = ui.row({
+        key = "s" .. id,
+        gap = 6,
+        padding = 4,
+        radius = 6,
+        align = "center",
+        onClick = function()
+          if not current then
+            shared.post("/session", { action = "resume", id = id })
+          end
+          picker = ""
+          markDirty()
+        end,
+      }, {
+        ui.glyph({
+          name = current and "player-play" or "history",
+          size = 12,
+          color = current and "primary" or "on_surface_variant",
+        }),
+        ui.label({
+          text = tostring(entry.title or id),
+          fontSize = 11,
+          color = current and "primary" or "on_surface",
+          maxLines = 1,
+          flexGrow = 1,
+        }),
+        ui.label({
+          text = shared.ago(tonumber(entry.mtime)),
+          fontSize = 10,
+          fontFamily = "monospace",
+          color = "on_surface_variant",
+          opacity = 0.8,
+        }),
+      })
     end
   elseif picker == "mode" then
     for _, mode in ipairs(MODES) do
@@ -650,8 +730,16 @@ local function header()
         visible = status.session_id ~= nil and status.session_id ~= "",
         text = tostring(status.session_id or ""):sub(1, 8),
         fontSize = 10,
+        fontFamily = "monospace",
         color = "on_surface_variant",
         opacity = 0.7,
+      }),
+      ui.button({
+        glyph = "history",
+        variant = "ghost",
+        controlSize = "sm",
+        tooltip = noctalia.tr("header.sessions_tooltip"),
+        onClick = function() togglePicker("session") end,
       }),
     }),
   })
