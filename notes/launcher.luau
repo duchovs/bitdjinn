@@ -6,7 +6,7 @@
 -- lists the notes. Opening hands the target filename to the panel through
 -- noctalia.state ("open_note") and toggles the panel.
 
-local PANEL_ID = "noctalia/notes:panel"
+local PANEL_ID = "duchovs/notes:panel"
 local SCRATCHPAD_BASE = "scratchpad"
 local MAX_MATCHES = 8
 

@@ -13,7 +13,7 @@ function update()
 end
 
 function onClick()
-  noctalia.togglePanel("noctalia/notes:panel")
+  noctalia.togglePanel("duchovs/notes:panel")
 end
 
 render()
