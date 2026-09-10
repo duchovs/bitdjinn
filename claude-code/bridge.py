@@ -26,6 +26,7 @@ import errno
 import json
 import os
 import queue
+import re
 import secrets
 import signal
 import socket
@@ -313,6 +314,11 @@ class Session:
         self.permissions: dict[str, dict] = {}
         self.counter = 0
         self.last_activity = time.time()
+        # Set by /effort. Every turn re-emits a session-init frame, and reading
+        # settings.json there would otherwise overwrite what the user just chose
+        # with the on-disk default. Cleared on a model switch, where a per-model
+        # override in settings becomes the better answer again.
+        self.effort_override: str | None = None
 
         # Streaming assembly state, reset per assistant message.
         self.stream_lock = threading.Lock()
@@ -415,6 +421,13 @@ class Session:
         return True
 
     def send_user(self, text: str) -> bool:
+        # The CLI answers /effort with usage text, never with the current value,
+        # so the only way to keep the header honest is to watch what goes past.
+        match = re.match(r"^/effort\s+(\w+)\s*$", text.strip())
+        if match and match.group(1).lower() in EFFORT_LEVELS:
+            self.effort_override = match.group(1).lower()
+            self.tx.set_status(effort=self.effort_override)
+
         self.tx.append({"kind": "user", "text": text, "ts": int(time.time())})
         ok = self.write(
             {
@@ -449,6 +462,9 @@ class Session:
         caps = result.get("data") or {}
         self.tx.set_caps(caps)
         fields = {
+            # The model is not known until the first session-init frame, so this
+            # is the top-level setting; it is refined per model once one lands.
+            "effort": read_effort(""),
             "mode": caps.get("current_permission_mode", "default"),
             "account": (caps.get("account") or {}).get("email", ""),
             "plan": (caps.get("account") or {}).get("subscriptionType", ""),
@@ -460,6 +476,16 @@ class Session:
             if self.tx.status.get("phase") in (None, "off", "starting"):
                 fields["phase"] = "idle"
         self.tx.set_status(**fields)
+
+        # Auto is this console's default: Claude Code decides when a call is
+        # worth asking about, rather than prompting for everything or nothing.
+        # Applied after the handshake so it survives whatever the CLI started in.
+        if self.options.get("default_mode"):
+            wanted = str(self.options["default_mode"])
+            if wanted != fields.get("mode"):
+                result = self.control({"subtype": "set_permission_mode", "mode": wanted})
+                if result.get("ok"):
+                    self.tx.set_status(mode=wanted)
 
     # -- answering an inbound permission request
 
@@ -773,10 +799,12 @@ class Session:
         if subtype == "init":
             servers = message.get("mcp_servers") or []
             failed = [s.get("name") for s in servers if s.get("status") == "failed"]
+            model = message.get("model", "") or self.tx.status.get("model", "")
             self.tx.set_status(
                 session_id=message.get("session_id", ""),
                 cwd=message.get("cwd", ""),
-                model=message.get("model", "") or self.tx.status.get("model", ""),
+                model=model,
+                effort=self.effort_override or read_effort(model),
                 tools=len(message.get("tools") or []),
                 mcp_failed=failed,
             )
@@ -810,6 +838,33 @@ class Session:
 
 
 # ── Usage ───────────────────────────────────────────────────────────────────
+
+
+EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max", "auto")
+
+
+def read_effort(model: str = "") -> str:
+    """Current effort level for `model`.
+
+    Neither the initialize handshake nor the session-init frame reports effort,
+    so it is read from Claude Code's own settings, where a per-model override in
+    `modelSettings` beats the top-level `effortLevel`. `/effort` typed in the
+    console updates this optimistically — the CLI has no readback for it.
+    """
+    try:
+        with open(os.path.expanduser("~/.claude/settings.json"), "r") as handle:
+            settings = json.load(handle)
+    except (OSError, ValueError):
+        return ""
+    if not isinstance(settings, dict):
+        return ""
+    per_model = settings.get("modelSettings")
+    if isinstance(per_model, dict) and model:
+        entry = per_model.get(model)
+        if isinstance(entry, dict) and isinstance(entry.get("effortLevel"), str):
+            return entry["effortLevel"]
+    top = settings.get("effortLevel")
+    return top if isinstance(top, str) else ""
 
 
 def read_oauth_token() -> str | None:
@@ -934,7 +989,9 @@ class Handler(BaseHTTPRequestHandler):
             if result.get("ok") and subtype == "set_permission_mode":
                 app.tx.set_status(mode=request["mode"])
             if result.get("ok") and subtype == "set_model":
-                app.tx.set_status(model=request.get("model") or "")
+                chosen = request.get("model") or ""
+                app.session.effort_override = None
+                app.tx.set_status(model=chosen, effort=read_effort(chosen))
             if result.get("ok") and subtype == "initialize":
                 app.tx.set_caps(result.get("data") or {})
             return self.reply(200, result)
@@ -957,6 +1014,11 @@ class Handler(BaseHTTPRequestHandler):
                 app.session.restart(resume=None, working_dir=payload.get("cwd") or "")
             elif action == "options":
                 app.session.options.update(payload.get("options") or {})
+            elif action == "start":
+                # Warm the CLI when the console opens rather than on the first
+                # message, so its Node/MCP boot overlaps with the user typing
+                # instead of being added to the first reply's latency.
+                app.ensure_session()
             elif action == "stop":
                 app.session.stop()
             return self.reply(200, {"ok": True})
@@ -1059,8 +1121,15 @@ class App:
         write_lock(port, self.token)
         log("listening on 127.0.0.1:%d" % port)
 
+        # shutdown() calls httpd.shutdown(), which blocks until the serve_forever
+        # loop exits. A signal handler runs on the main thread — the same thread
+        # that loop is on — so calling it directly deadlocks and the process
+        # ignores SIGTERM. Hand it to a helper thread instead.
+        def on_signal(*_):
+            threading.Thread(target=self.shutdown, daemon=True).start()
+
         for sig in (signal.SIGTERM, signal.SIGINT):
-            signal.signal(sig, lambda *_: self.shutdown())
+            signal.signal(sig, on_signal)
 
         threading.Thread(target=self.idle_watch, daemon=True).start()
         if self.options.get("eager"):
@@ -1095,6 +1164,7 @@ def main() -> int:
         "permission_prompts": flag("permission-prompts", "ask"),
         "permission_timeout": int_flag("permission-timeout", 120),
         "idle_shutdown_minutes": int_flag("idle-minutes", 0),
+        "default_mode": flag("default-mode", "auto"),
         "eager": "--eager" in sys.argv or os.environ.get("CC_EAGER", "") == "1",
     }
 

@@ -36,19 +36,23 @@ local VISIBLE_LIMIT = 200
 
 -- ── Helpers ─────────────────────────────────────────────────────────────────
 
-local function markDirty()
-  dirty = true
-end
-
-local function busy(): boolean
-  return status.phase == "busy" or status.phase == "starting"
-end
-
 local function setTicking(want: boolean)
   if want ~= ticking then
     ticking = want
     panel.setNeedsFrameTick(want)
   end
+end
+
+-- Marking the tree dirty has to ask for a frame as well. The tick is switched
+-- off whenever the picture settles, so without this a keystroke or a click
+-- between turns would set the flag and then never be drawn.
+local function markDirty()
+  dirty = true
+  setTicking(true)
+end
+
+local function busy(): boolean
+  return status.phase == "busy" or status.phase == "starting"
 end
 
 local function resetTranscript()
@@ -115,7 +119,6 @@ local function handleEvent(event)
   elseif kind == "reset" then
     resetTranscript()
   end
-  setTicking(busy())
   markDirty()
 end
 
@@ -480,7 +483,8 @@ local function modelLabel(): string
   -- The picker's display names are friendlier than the wire ids.
   if type(caps.models) == "table" then
     for _, entry in ipairs(caps.models) do
-      if type(entry) == "table" and entry.resolvedModel == model then
+      if type(entry) == "table" and entry.resolvedModel == model
+        and tostring(entry.value) ~= "default" then
         return tostring(entry.displayName or model)
       end
     end
@@ -498,14 +502,19 @@ local function togglePicker(which: string)
   markDirty()
 end
 
-local MODES = { "default", "plan", "acceptEdits", "auto", "dontAsk", "bypassPermissions" }
+-- Auto first because it is the console's default; "default" is the CLI's name
+-- for ask-before-anything-risky, which is what it is labelled.
+local MODES = { "auto", "default", "plan", "acceptEdits", "dontAsk", "bypassPermissions" }
 
 local function pickerRows()
   local rows = {}
   if picker == "model" then
     local models = type(caps.models) == "table" and caps.models or {}
     for _, entry in ipairs(models) do
-      if type(entry) == "table" and entry.value ~= nil then
+      -- The session always offers a "default" alias that resolves to the same
+      -- model as one of the named entries; showing both is a duplicate row whose
+      -- label says less than the real one.
+      if type(entry) == "table" and entry.value ~= nil and tostring(entry.value) ~= "default" then
         local value = tostring(entry.value)
         rows[#rows + 1] = ui.row({
           key = "m" .. value,
@@ -580,6 +589,7 @@ local function header()
   end
 
   local mode = tostring(status.mode or "default")
+  local effort = tostring(status.effort or "")
 
   return ui.column({ gap = 4 }, {
     ui.row({ gap = 8, align = "center" }, {
@@ -610,6 +620,14 @@ local function header()
         variant = "ghost",
         tooltip = noctalia.tr("header.model_tooltip"),
         onClick = function() togglePicker("model") end,
+      }),
+      ui.label({
+        visible = effort ~= "",
+        text = effort,
+        fontSize = 10,
+        fontFamily = "monospace",
+        color = "on_surface_variant",
+        opacity = 0.85,
       }),
       ui.label({
         visible = usageText ~= "",
@@ -783,7 +801,7 @@ local function render()
     rows[#rows + 1] = renderItem(items[position])
   end
 
-  panel.render(ui.column({ padding = 10, gap = 8 }, {
+  panel.render(ui.column({ flexGrow = 1, align = "stretch", padding = 10, gap = 8 }, {
     header(),
     ui.column({
       visible = picker ~= "",
@@ -812,6 +830,7 @@ function onOpen(context: string?)
   launched = false
   notice = ""
   connect()
+  shared.post("/session", { action = "start" })
   dirty = true
   render()
   -- Always tick briefly after opening: the first connect may still be waiting on

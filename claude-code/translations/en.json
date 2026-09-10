@@ -22,14 +22,14 @@
     "accept_edits": "Accept edits",
     "auto": "Auto",
     "bypass_permissions": "Bypass",
-    "default": "Default",
+    "default": "Ask",
     "dont_ask": "Don't ask",
     "manual": "Manual",
     "plan": "Plan"
   },
   "mode_hint": {
     "accept_edits": "File edits apply without asking",
-    "auto": "Claude Code decides when to ask",
+    "auto": "Claude Code decides when to ask — the default",
     "bypass_permissions": "No prompts at all — full access",
     "default": "Ask before anything risky",
     "dont_ask": "Never prompt; denied actions just fail",

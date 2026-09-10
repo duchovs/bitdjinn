@@ -72,7 +72,7 @@ are about the console rather than the conversation:
 | `/stop` | Interrupt the running turn |
 | `/cwd <path>` | Change the working directory and restart the session there |
 
-### Model and permission mode
+### Model, permission mode and effort
 
 The two chips in the header are pickers. The model list is the one your session
 reports — display names, descriptions and all — and choosing from either applies
@@ -80,8 +80,21 @@ to the **live session**: no restart, no lost context. Under the hood these use
 the CLI's own control protocol (`set_model`, `set_permission_mode`), the same
 path the Agent SDK uses.
 
-Permission modes are colored by how much rope they give: `Plan` reads and
+The session also offers a `default` model alias that resolves to the same model
+as one of the named entries, so the picker hides it — it would be the same
+choice twice, under the less informative name.
+
+A new session starts in **Auto**, where Claude Code decides which calls are worth
+asking about. The mode the CLI calls `default` — ask before anything risky — is
+listed as **Ask**. Modes are colored by how much rope they give: `Plan` reads and
 reasons only, `Bypass` is styled as destructive because it is.
+
+The current effort level sits next to the model as plain text. It is deliberately
+not a third dropdown — change it by typing `/effort <low|medium|high|xhigh|max|auto>`
+like any other command. The CLI has no way to report effort back, so the console
+reads the starting value from your Claude Code settings (`effortLevel`, and any
+per-model override in `modelSettings`) and then follows the `/effort` commands you
+send.
 
 ### Permission requests
 
