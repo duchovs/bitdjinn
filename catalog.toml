@@ -24,13 +24,13 @@ tags = ["utility", "indicator", "network", "panel", "bar"]
 [[plugin]]
 id = "duchovs/notes"
 name = "Notes (local fork)"
-version = "1.1.0"
-updated_at = 1789001562
-added_at = 1789001562
+version = "1.2.0"
+updated_at = 1789002247
+added_at = 1789002247
 author = "duchovs"
 license = "MIT"
 icon = "notes"
-description = "Quick markdown notes in a full-height side panel, with a rendered preview toggle."
+description = "Quick markdown notes in a full-height side panel, with a rendered preview you click into to edit."
 plugin_api = 21
 tags = ["productivity"]
 
