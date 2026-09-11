@@ -52,3 +52,16 @@ icon = "sparkles"
 description = "Interactive Claude Code console: a persistent streaming session, tool and thinking transcript, and plan usage."
 plugin_api = 24
 tags = ["ai", "development", "productivity", "bar", "panel", "service"]
+
+[[plugin]]
+id = "duchovs/tasks"
+name = "Tasks"
+version = "2.0.0"
+updated_at = 1789141882
+added_at = 1789141882
+author = "duchovs"
+license = "MIT"
+icon = "checklist"
+description = "Nextcloud Tasks lists synced over CalDAV, with per-list color coding, filters and quick capture."
+plugin_api = 28
+tags = ["productivity", "network", "panel", "bar", "launcher"]
