@@ -23,6 +23,9 @@ Noctalia plugin *source*.
   renamed to `duchovs/notes`. Adds an eye-button toggle in the editor header
   that swaps the raw buffer for a rendered `ui.markdown` preview (requires
   `plugin_api >= 21`).
+- [`tasks/`](tasks) — original plugin, `duchovs/tasks`. Nextcloud Tasks lists
+  synced over CalDAV, with per-list color coding, filters, and quick capture
+  from a bar widget, side panel, and `/td` launcher prefix.
 
 ## Setting up on a new device
 

@@ -1,0 +1,135 @@
+{
+  "account": {
+    "connect": "Connect",
+    "connected": "Connected as {user}.",
+    "copy_link": "Copy link",
+    "disabled": "Turned off in settings",
+    "disconnect": "Disconnect",
+    "disconnected": "Nextcloud disconnected.",
+    "link_copied": "Login link copied.",
+    "login_open": "Finish signing in in your browser. You can close this panel — the connection completes in the background. The link is valid for 20 minutes.",
+    "login_starting": "Asking the server for a login link…",
+    "nextcloud": "Nextcloud Tasks",
+    "open_browser": "Open browser",
+    "read_only": "Read-only",
+    "reconnect": "Reconnect",
+    "visible_lists": "Visible lists"
+  },
+  "accounts_title": "Accounts & lists",
+  "all_lists": "All",
+  "back": "Back",
+  "cancel": "Cancel",
+  "close": "Close",
+  "confirm_delete": "Delete?",
+  "delete": "Delete",
+  "detail": {
+    "due": "Due",
+    "notes": "Notes",
+    "notes_hint": "Ctrl+Enter saves",
+    "notes_placeholder": "Anything worth remembering about this task",
+    "priority": "Priority",
+    "title": "Title"
+  },
+  "dismiss": "Dismiss",
+  "due": {
+    "next_week": "Next week",
+    "none": "No date",
+    "today": "Today",
+    "tomorrow": "Tomorrow"
+  },
+  "empty": {
+    "clear": "Nothing left here.",
+    "connect": "Set up an account",
+    "no_accounts": "No task lists yet. Connect a Nextcloud server to get started."
+  },
+  "error": {
+    "bad_date": "Enter a date as YYYY-MM-DD.",
+    "bad_task": "This task could not be read back; it may have been changed elsewhere.",
+    "conflict": "Changed on another device. Reloading.",
+    "login_expired": "The login link expired before it was approved. Start again.",
+    "no_account": "That list's account is not connected.",
+    "no_server": "Enter your Nextcloud address in settings first.",
+    "no_writable_list": "No writable list is available.",
+    "not_connected": "Nextcloud is not connected yet.",
+    "save_failed": "Connected, but the credentials could not be saved to disk.",
+    "sync_stalled": "A sync did not finish and was restarted."
+  },
+  "hide_completed": "Hide completed",
+  "last_sync": "Synced at {time}",
+  "launcher": {
+    "add": "Add “{summary}”",
+    "add_subtitle": "Create a task",
+    "added": "Added “{summary}” to {list}",
+    "completed": "Completed “{summary}”",
+    "open_panel": "Open the task panel",
+    "open_panel_subtitle": {
+      "one": "{count} list",
+      "other": "{count} lists"
+    }
+  },
+  "priority": {
+    "high": "High",
+    "low": "Low",
+    "medium": "Medium",
+    "none": "None"
+  },
+  "quick_add": {
+    "no_list": "No writable list yet",
+    "placeholder": "Add to {list}…"
+  },
+  "section": {
+    "completed": "Completed",
+    "no_date": "No date",
+    "overdue": "Overdue",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "upcoming": "Upcoming"
+  },
+  "settings": {
+    "count_mode": {
+      "description": "Which number the bar widget displays.",
+      "label": "Show count of",
+      "options": {
+        "due": "Due today and overdue",
+        "none": "No number",
+        "open": "All open tasks",
+        "overdue": "Overdue only"
+      }
+    },
+    "glyph": {
+      "label": "Icon"
+    },
+    "nextcloud_enabled": {
+      "description": "Sync the task lists on a Nextcloud server over CalDAV.",
+      "label": "Nextcloud Tasks"
+    },
+    "nextcloud_password_command": {
+      "description": "Optional. Command that prints an app password on its first line, used instead of the one obtained by connecting in the browser.",
+      "label": "Password command"
+    },
+    "nextcloud_url": {
+      "description": "For example https://cloud.example.com — connect from the panel's account view once this is set.",
+      "label": "Server address"
+    },
+    "sync_interval_minutes": {
+      "description": "Minutes between background syncs. Collections that have not changed cost one request.",
+      "label": "Sync every"
+    }
+  },
+  "show_completed": "Show completed",
+  "sort": {
+    "due": "Sorted by due date",
+    "name": "Sorted by name",
+    "priority": "Sorted by priority"
+  },
+  "sync_now": "Sync now",
+  "title": "Tasks",
+  "tooltip": {
+    "due_today": "Due today",
+    "open": "Open",
+    "overdue": "Overdue",
+    "status": "Status",
+    "syncing": "Syncing…"
+  },
+  "untitled": "Untitled task"
+}

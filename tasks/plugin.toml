@@ -1,0 +1,99 @@
+# Nextcloud Tasks in a side panel, over CalDAV.
+#
+# Nextcloud is connected through Login Flow v2: browser SSO in exchange for a
+# device-scoped app password, so no password is ever typed into shell config.
+
+id = "duchovs/tasks"
+name = "Tasks"
+version = "2.0.0"
+plugin_api = 28
+author = "duchovs"
+license = "MIT"
+dependencies = []
+tags = ["productivity", "network", "panel", "bar", "launcher"]
+icon = "checklist"
+description = "Nextcloud Tasks lists synced over CalDAV, with per-list color coding, filters and quick capture."
+
+# ── Nextcloud ────────────────────────────────────────────────────────────────
+
+[[setting]]
+key = "nextcloud_enabled"
+type = "bool"
+label_key = "settings.nextcloud_enabled.label"
+description_key = "settings.nextcloud_enabled.description"
+default = false
+
+[[setting]]
+key = "nextcloud_url"
+type = "string"
+label_key = "settings.nextcloud_url.label"
+description_key = "settings.nextcloud_url.description"
+default = ""
+visible_when = { key = "nextcloud_enabled", values = ["true"] }
+
+[[setting]]
+key = "nextcloud_password_command"
+type = "string"
+label_key = "settings.nextcloud_password_command.label"
+description_key = "settings.nextcloud_password_command.description"
+default = ""
+visible_when = { key = "nextcloud_enabled", values = ["true"] }
+advanced = true
+
+# ── Behaviour ────────────────────────────────────────────────────────────────
+
+[[setting]]
+key = "sync_interval_minutes"
+type = "int"
+label_key = "settings.sync_interval_minutes.label"
+description_key = "settings.sync_interval_minutes.description"
+default = 5
+min = 1
+max = 240
+
+# ── Entries ──────────────────────────────────────────────────────────────────
+
+# Owns the network: discovery, periodic pulls, and the on-disk cache every
+# other entry reads. Runs even with the panel closed so the bar count is live.
+[[service]]
+id = "sync"
+entry = "service.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 460
+height = "fill"
+placement = "floating"
+position = "center_right"
+
+[[widget]]
+id = "tasks"
+entry = "widget.luau"
+
+  [[widget.setting]]
+  key = "glyph"
+  type = "glyph"
+  label_key = "settings.glyph.label"
+  default = "checklist"
+
+  [[widget.setting]]
+  key = "count_mode"
+  type = "select"
+  label_key = "settings.count_mode.label"
+  description_key = "settings.count_mode.description"
+  default = "due"
+  options = [
+    { value = "due", label_key = "settings.count_mode.options.due" },
+    { value = "overdue", label_key = "settings.count_mode.options.overdue" },
+    { value = "open", label_key = "settings.count_mode.options.open" },
+    { value = "none", label_key = "settings.count_mode.options.none" },
+  ]
+
+[[launcher_provider]]
+id = "finder"
+entry = "launcher.luau"
+prefix = "td"
+glyph = "checklist"
+include_in_global_search = false
+debounce_ms = 150
